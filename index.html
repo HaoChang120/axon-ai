@@ -249,7 +249,7 @@
     <div class="block reveal">
       <div class="kicker">00 / THE MISSION</div>
       <h2>Make football<br><em>safer for all.</em></h2>
-      <p class="body">Built by two students with one mission: turn head impacts from guesswork into data. Axon moves the sideline from speculation to a real-time, data-driven decision the moment a hit happens.</p>
+      <p class="body">Built by a founder who lived the problem — two Grade 2 concussions across a varsity football career. Axon turns head impacts from guesswork into data, moving the sideline from speculation to a real-time, data-driven decision the moment a hit happens.</p>
       <div class="objs">
         <div class="obj"><span>01</span>Delivers real-time contact data to coaches and players</div>
         <div class="obj"><span>02</span>Records and flags potential concussions as they occur</div>
@@ -317,7 +317,7 @@
     <div class="block reveal">
       <div class="kicker">05 / DEPLOYMENT</div>
       <h2>Built before<br>the <em>blueprint.</em></h2>
-      <p class="body" style="max-width:600px;margin:0 auto">A completed product with published research behind it — built by two students and piloting with high school football programs in Orange County. The detection layer that youth sports has been missing.</p>
+      <p class="body" style="max-width:600px;margin:0 auto">A completed product with published research behind it — built by its founder, Hao Chang, and piloting with high school football programs in Orange County. The detection layer that youth sports has been missing.</p>
       <a class="contact" href="mailto:haochang164@gmail.com">haochang164@gmail.com</a>
       <div class="footer-meta">
         <span>PROJECT LEAD — HAO CHANG</span>
@@ -506,64 +506,79 @@ function buildBrain(){
 function buildHelmet(){
   const group=new THREE.Group();
   const timeMats=[];
+  const A=1.53,B=1.575,C=1.8;            // ellipsoid semi-axes (1.5 * scale)
+  // front surface z for a given (x,y) on the shell, pushed slightly out
+  const surfZ=(x,y,push)=>{ const ins=1-(x/A)**2-(y/B)**2; return ins<=0.03?null:C*Math.sqrt(ins)*push; };
 
-  // --- main shell: fresnel-glow dome, aerodynamic egg ---
-  const shellGeo=new THREE.SphereGeometry(1.5,96,96); shellGeo.scale(1.02,1.05,1.2);
-  const shellMat=fresnelMat(0x05121c,0x2bb5d6,0.55,3.2,0.9); timeMats.push(shellMat);
-  const shell=new THREE.Mesh(shellGeo,shellMat); group.add(shell);
-
-  // --- inner solid core so it doesn't look hollow ---
-  const coreGeo=new THREE.SphereGeometry(1.42,48,48); coreGeo.scale(1.02,1.05,1.2);
-  const core=new THREE.Mesh(coreGeo,new THREE.MeshStandardMaterial({
-    color:0x060d15,metalness:0.85,roughness:0.4,emissive:0x05141c,emissiveIntensity:0.6}));
-  group.add(core);
-
-  // --- panel seams (glowing latitude/longitude lines) ---
-  const seamMat=new THREE.LineBasicMaterial({color:0x1f6f8c,transparent:true,opacity:0.55});
-  for(let a=0;a<6;a++){           // longitudinal seams
-    const pts=[]; for(let t=-1;t<=1;t+=0.05){ const th=t*Math.PI*0.5;
-      pts.push(new THREE.Vector3(Math.cos(th)*Math.sin(a/6*Math.PI*2)*1.53,Math.sin(th)*1.61,Math.cos(th)*Math.cos(a/6*Math.PI*2)*1.83)); }
-    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),seamMat));
+  // remove the front-face triangles so there's a real face opening
+  function carveFace(geo){
+    geo=geo.toNonIndexed();
+    const pos=geo.attributes.position, keep=[];
+    const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),ce=new THREE.Vector3();
+    for(let i=0;i<pos.count;i+=3){
+      a.fromBufferAttribute(pos,i); b.fromBufferAttribute(pos,i+1); c.fromBufferAttribute(pos,i+2);
+      ce.copy(a).add(b).add(c).multiplyScalar(1/3).normalize();
+      const inFace = ce.z>0.46 && ce.y<0.42 && ce.y>-0.66 && Math.abs(ce.x)<0.52;
+      if(!inFace){ a.toArray(keep,keep.length); b.toArray(keep,keep.length); c.toArray(keep,keep.length); }
+    }
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(keep,3));
+    g.computeVertexNormals(); return g;
   }
+
+  // --- shell with carved face opening (fresnel glow) ---
+  const shellGeo=new THREE.SphereGeometry(1.5,120,120); shellGeo.scale(1.02,1.05,1.2);
+  const shellMat=fresnelMat(0x05121c,0x2bb5d6,0.6,3.2,0.9); timeMats.push(shellMat);
+  group.add(new THREE.Mesh(carveFace(shellGeo),shellMat));
+
+  // --- closed inner core => dark recessed face cavity through the opening ---
+  const coreGeo=new THREE.SphereGeometry(1.36,48,48); coreGeo.scale(1.02,1.05,1.2);
+  group.add(new THREE.Mesh(coreGeo,new THREE.MeshStandardMaterial({
+    color:0x04090f,metalness:0.85,roughness:0.5,emissive:0x05121a,emissiveIntensity:0.45})));
+
+  // --- glowing rim framing the face opening ---
+  const framePts=[],FR=60;
+  for(let i=0;i<=FR;i++){ const ang=i/FR*Math.PI*2;
+    const x=Math.cos(ang)*0.52, y=-0.12+Math.sin(ang)*0.5;
+    const z=surfZ(x,y,1.03)||C*0.2; framePts.push(new THREE.Vector3(x,y,z)); }
+  group.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(framePts,true),80,0.028,10,true),
+    new THREE.MeshBasicMaterial({color:CYAN})));
+
+  // --- facemask cage: horizontal + vertical bars, incl. a low chin bar (no gap underneath) ---
+  const maskMat=new THREE.MeshBasicMaterial({color:0x7fe6ff});
+  function addBar(getPt){ const pts=[],s=16;
+    for(let i=0;i<=s;i++){ const p=getPt(i/s); if(p) pts.push(p); }
+    if(pts.length>1) group.add(new THREE.Mesh(
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),s,0.02,8,false),maskMat)); }
+  // horizontal bars (brow, eye, nose, mouth, chin/under)
+  [[0.32,0.66],[0.10,0.72],[-0.14,0.70],[-0.40,0.60],[-0.62,0.40]].forEach(([y,xs])=>
+    addBar(u=>{ const x=-xs+2*xs*u; const z=surfZ(x,y,1.05); return z?new THREE.Vector3(x*1.05,y*1.05,z):null; }));
+  // vertical bars (center + two sides), curving down across the chin
+  [-0.38,0,0.38].forEach(x=>
+    addBar(u=>{ const y=0.42+(-0.66-0.42)*u; const z=surfZ(x,y,1.05); return z?new THREE.Vector3(x*1.05,y*1.05,z):null; }));
 
   // --- crest fin along the top centerline ---
   const finShape=new THREE.Shape();
   finShape.moveTo(-1.2,0); finShape.quadraticCurveTo(0,0.42,1.25,0); finShape.lineTo(1.25,-0.04); finShape.quadraticCurveTo(0,0.30,-1.2,-0.04);
   const fin=new THREE.Mesh(new THREE.ExtrudeGeometry(finShape,{depth:0.05,bevelEnabled:false}),
-    fresnelMat(0x07151f,0x3df2ff,0.8,2.0,1.0));
-  timeMats.push(fin.material);
-  fin.position.set(0,1.18,-0.02); fin.rotation.set(Math.PI/2,0,0); fin.scale.set(1,1.05,1); group.add(fin);
+    fresnelMat(0x07151f,0x3df2ff,0.8,2.0,1.0)); timeMats.push(fin.material);
+  fin.position.set(0,1.16,-0.02); fin.rotation.set(Math.PI/2,0,0); fin.scale.set(1,1.05,1); group.add(fin);
 
-  // --- wraparound holographic visor (front band) ---
-  const visGeo=new THREE.SphereGeometry(1.55,96,48,Math.PI*0.16,Math.PI*0.68,Math.PI*0.34,Math.PI*0.28);
+  // --- holographic forehead visor strip (above the opening) ---
+  const visGeo=new THREE.SphereGeometry(1.55,96,48,Math.PI*0.18,Math.PI*0.64,Math.PI*0.18,Math.PI*0.15);
   visGeo.scale(1.02,1.05,1.2);
   const visor=new THREE.Mesh(visGeo,visorMat()); timeMats.push(visor.material); group.add(visor);
-  // visor brow trim
-  const brow=new THREE.Mesh(new THREE.TorusGeometry(0.96,0.03,10,80,Math.PI*1.05),
-    new THREE.MeshBasicMaterial({color:CYAN}));
-  brow.rotation.set(Math.PI/2-0.25,0,0); brow.position.set(0,0.42,1.18); group.add(brow);
 
-  // --- sleek energy facemask: 3 thin glowing bars below visor ---
-  const maskMat=new THREE.MeshBasicMaterial({color:0x6fe3ff});
-  for(let n=0;n<3;n++){ const y=-0.18-n*0.32; const w=0.82-n*0.13;
-    const bar=new THREE.Mesh(new THREE.TorusGeometry(w,0.018,8,48,Math.PI*0.9),maskMat);
-    bar.rotation.set(Math.PI/2,0,Math.PI/2); bar.position.set(0,y,1.32-n*0.05); group.add(bar);
-  }
-  // chin guard
-  const chin=new THREE.Mesh(new THREE.TorusGeometry(0.55,0.05,12,48,Math.PI),
-    fresnelMat(0x06121b,0x2bb5d6,0.7,2.5,0.9)); timeMats.push(chin.material);
-  chin.rotation.set(Math.PI*0.62,0,0); chin.position.set(0,-1.02,0.95); group.add(chin);
-
-  // --- antenna accents (top sides) ---
+  // --- antenna accents (top rear sides) ---
   const antMat=new THREE.MeshBasicMaterial({color:CYAN});
   [-1,1].forEach(s=>{
     const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.025,0.55,8),antMat);
-    ant.position.set(s*0.72,1.18,-0.35); ant.rotation.set(0.3,0,s*0.35); group.add(ant);
+    ant.position.set(s*0.72,1.16,-0.35); ant.rotation.set(0.3,0,s*0.35); group.add(ant);
     const tip=new THREE.Mesh(new THREE.SphereGeometry(0.045,12,12),antMat);
-    tip.position.set(s*0.86,1.42,-0.45); group.add(tip);
+    tip.position.set(s*0.86,1.40,-0.45); group.add(tip);
   });
 
-  // --- orbiting holo ring ---
+  // --- orbiting holo rings ---
   const holo=new THREE.Mesh(new THREE.TorusGeometry(2.1,0.008,8,128),
     new THREE.MeshBasicMaterial({color:CYAN,transparent:true,opacity:0.5}));
   holo.rotation.set(Math.PI*0.42,0.3,0); group.add(holo);
@@ -571,11 +586,12 @@ function buildHelmet(){
     new THREE.MeshBasicMaterial({color:0x2a6cff,transparent:true,opacity:0.35}));
   holo2.rotation.set(Math.PI*0.5,0,0.4); group.add(holo2);
 
-  // --- glowing sensor studs along seams ---
+  // --- glowing sensor studs (kept off the open face) ---
   const nodes=[]; const N=14,R=1.5;
   for(let i=0;i<N;i++){ const phi=Math.acos(1-2*(i+0.5)/N), th=Math.PI*(1+Math.sqrt(5))*i;
-    const x=R*Math.sin(phi)*Math.cos(th)*1.02, y=R*Math.cos(phi)*1.05, z=R*Math.sin(phi)*Math.sin(th)*1.2;
-    if(z>0.7&&y<0.3) continue;   // keep the face/visor region clean
+    const dz=Math.sin(phi)*Math.sin(th), dy=Math.cos(phi);
+    if(dz>0.46 && dy<0.42 && dy>-0.66) continue;   // skip the face-opening region
+    const x=R*Math.sin(phi)*Math.cos(th)*1.02, y=dy*R*1.05, z=dz*R*1.2;
     const node=new THREE.Mesh(nodeGeo,new THREE.MeshBasicMaterial({color:CYAN}));
     node.position.set(x,y,z); node.userData={flash:0}; group.add(node); nodes.push(node);
   }
