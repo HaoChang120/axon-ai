@@ -30,4 +30,14 @@ for (const [name, jersey, pos] of roster) {
       .run(pid, Math.round(g * 10) / 10, Math.round(a), sev, fl);
   }
 }
-console.log(`Seeded. Login -> email: ${email}  password: ${pass}`);
+// player account, linked to the Hao Chang roster record (so it already has impact history)
+const pEmail = 'player@axon.ai', pPass = 'axon1234';
+db.prepare('DELETE FROM users WHERE email = ?').run(pEmail);
+const puid = db.prepare('INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)')
+  .run(pEmail, bcrypt.hashSync(pPass, 10), 'Hao Chang', 'player').lastInsertRowid;
+const hp = db.prepare("SELECT id FROM players WHERE owner_id = ? AND name = 'Hao Chang'").get(owner);
+if (hp) db.prepare('UPDATE players SET user_id = ? WHERE id = ?').run(puid, hp.id);
+
+console.log(`Seeded.`);
+console.log(`  Coach  -> ${email} / ${pass}`);
+console.log(`  Player -> ${pEmail} / ${pPass}`);

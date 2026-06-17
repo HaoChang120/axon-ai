@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AXON AI — Player Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#04060a;--bg2:#0a121c;--cyan:#3df2ff;--red:#ff4d5e;--amber:#ffb347;--green:#3dffb0;--ink:#e8f4ff;--dim:#6f8197;--line:rgba(61,242,255,.16)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:"Space Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(42,108,255,.12),transparent 60%)}
+  a{color:var(--cyan);text-decoration:none}
+  .mono{font-family:"JetBrains Mono",monospace}
+  .wrap{max-width:760px;margin:0 auto;padding:28px 22px 80px}
+  header{display:flex;justify-content:space-between;align-items:center;padding:6px 0 24px;border-bottom:1px solid var(--line);margin-bottom:28px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:600;letter-spacing:.24em;font-size:14px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+  .ghost{background:transparent;border:1px solid var(--line);color:var(--dim);font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.14em;padding:9px 15px;cursor:pointer;transition:.25s}
+  .ghost:hover{color:var(--ink);border-color:var(--cyan)}
+
+  .auth{max-width:380px;margin:7vh auto 0;border:1px solid var(--line);background:rgba(10,18,28,.6);backdrop-filter:blur(8px);padding:34px}
+  .auth h1{font-size:26px;font-weight:600;margin-bottom:6px}
+  .auth p{color:var(--dim);font-size:13px;margin-bottom:22px}
+  .tabs{display:flex;gap:4px;margin-bottom:20px}
+  .tabs button{flex:1;background:transparent;border:1px solid var(--line);color:var(--dim);font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.14em;padding:11px;cursor:pointer}
+  .tabs button.on{background:var(--cyan);color:var(--bg);border-color:var(--cyan)}
+  label{display:block;font-size:11px;letter-spacing:.1em;color:var(--dim);margin:14px 0 6px;font-family:"JetBrains Mono",monospace}
+  input{width:100%;background:#070d15;border:1px solid var(--line);color:var(--ink);padding:12px;font-family:inherit;font-size:14px}
+  input:focus{outline:none;border-color:var(--cyan)}
+  .btn{width:100%;margin-top:22px;background:var(--cyan);color:var(--bg);border:0;padding:14px;font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.18em;cursor:pointer;transition:.25s}
+  .btn:hover{box-shadow:0 0 26px rgba(61,242,255,.5)}
+  .err{color:var(--red);font-size:12px;margin-top:14px;min-height:16px;font-family:"JetBrains Mono",monospace}
+  .hint{margin-top:18px;font-size:11px;color:var(--dim);font-family:"JetBrains Mono",monospace;line-height:1.7}
+  .row2{display:flex;gap:10px}.row2 .col{flex:1}
+
+  .hidden{display:none}
+  /* clearance banner */
+  .banner{border:1px solid var(--line);padding:26px;margin-bottom:26px;display:flex;justify-content:space-between;align-items:center;gap:18px}
+  .banner .big{font-size:26px;font-weight:600;letter-spacing:-.01em}
+  .banner .sub{font-size:13px;color:var(--dim);margin-top:6px;max-width:380px;line-height:1.5}
+  .banner .ico{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.2em;padding:7px 12px;border:1px solid currentColor}
+  .b-cleared{border-color:rgba(61,255,176,.4);background:rgba(61,255,176,.05)} .b-cleared .big,.b-cleared .ico{color:var(--green)}
+  .b-flagged{border-color:rgba(255,77,94,.45);background:rgba(255,77,94,.06)} .b-flagged .big,.b-flagged .ico{color:var(--red)}
+  .b-monitor{border-color:rgba(255,179,71,.45);background:rgba(255,179,71,.06)} .b-monitor .big,.b-monitor .ico{color:var(--amber)}
+
+  .who{margin-bottom:22px}.who .nm{font-size:20px;font-weight:600}.who .mt{font-size:12px;color:var(--dim);font-family:"JetBrains Mono",monospace;margin-top:3px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:26px}
+  .stat{background:var(--bg2);padding:18px}.stat .n{font-size:28px;font-weight:600;color:var(--cyan)}.stat .l{font-size:10px;letter-spacing:.18em;color:var(--dim);margin-top:5px;font-family:"JetBrains Mono",monospace}
+  .stat.flag .n{color:var(--red)}
+  .card{border:1px solid var(--line);background:rgba(10,18,28,.5);padding:22px;margin-bottom:22px}
+  .card h2{font-size:12px;letter-spacing:.2em;color:var(--cyan);font-family:"JetBrains Mono",monospace;margin-bottom:16px}
+  .impact{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(61,242,255,.08)}
+  .impact:last-child{border:0}
+  .impact .t{font-size:11px;color:var(--dim);font-family:"JetBrains Mono",monospace}
+  .sev{font-family:"JetBrains Mono",monospace;font-size:11px}.sev.routine{color:var(--dim)}.sev.elevated{color:var(--amber)}.sev.concussion-risk{color:var(--red)}
+  .checkin{display:flex;gap:10px}.checkin button{flex:1;padding:14px;border:1px solid var(--line);background:transparent;font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.12em;cursor:pointer;transition:.25s}
+  .ok-btn{color:var(--green)}.ok-btn:hover{background:rgba(61,255,176,.1);border-color:var(--green)}
+  .off-btn{color:var(--amber)}.off-btn:hover{background:rgba(255,179,71,.1);border-color:var(--amber)}
+  .ci-note{font-size:11px;color:var(--dim);font-family:"JetBrains Mono",monospace;margin-top:12px;min-height:14px}
+  .empty{color:var(--dim);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="dot"></span>AXON&nbsp;AI · PLAYER PORTAL</div>
+    <button class="ghost hidden" id="logout">LOG OUT</button>
+  </header>
+
+  <!-- AUTH -->
+  <div class="auth" id="authView">
+    <h1>Your Head, Your Data</h1>
+    <p>Sign in to see your impact history and clearance status.</p>
+    <div class="tabs"><button class="on" id="tabLogin">LOG IN</button><button id="tabReg">REGISTER</button></div>
+    <div id="regFields" class="hidden">
+      <label>FULL NAME</label><input id="fName" placeholder="Your name" />
+      <div class="row2"><div class="col"><label>JERSEY #</label><input id="fJersey" placeholder="00" /></div>
+        <div class="col"><label>POSITION</label><input id="fPos" placeholder="e.g. DE" /></div></div>
+    </div>
+    <label>EMAIL</label><input id="fEmail" type="email" placeholder="you@email.com" />
+    <label>PASSWORD</label><input id="fPass" type="password" placeholder="••••••••" />
+    <button class="btn" id="submit">LOG IN</button>
+    <div class="err" id="err"></div>
+    <div class="hint">Demo player &mdash; <b>player@axon.ai</b> / <b>axon1234</b><br>Coaches: <a href="/">coach console →</a></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dash" class="hidden">
+    <div class="banner" id="banner">
+      <div><div class="big" id="bTitle">—</div><div class="sub" id="bSub"></div></div>
+      <div class="ico" id="bIco"></div>
+    </div>
+    <div class="who"><div class="nm" id="who">—</div><div class="mt" id="whoMeta"></div></div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="sImpacts">0</div><div class="l">IMPACTS</div></div>
+      <div class="stat flag"><div class="n" id="sFlag">0</div><div class="l">CONCUSSION FLAGS</div></div>
+      <div class="stat"><div class="n" id="sPeak">0</div><div class="l">PEAK g</div></div>
+    </div>
+    <div class="card">
+      <h2>DAILY CHECK-IN</h2>
+      <div class="checkin">
+        <button class="ok-btn" onclick="checkin('ok')">I FEEL OK</button>
+        <button class="off-btn" onclick="checkin('symptoms')">SOMETHING'S OFF</button>
+      </div>
+      <div class="ci-note" id="ciNote"></div>
+    </div>
+    <div class="card">
+      <h2>MY IMPACT HISTORY</h2>
+      <div id="impacts"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = location.origin;
+let token = localStorage.getItem('axon_player_token') || '';
+let mode = 'login';
+const $ = (id) => document.getElementById(id);
+const headers = () => ({ 'Content-Type':'application/json', ...(token?{Authorization:'Bearer '+token}:{}) });
+async function api(path, opts={}){ const r=await fetch(API+path,{headers:headers(),...opts});
+  const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||'Request failed'); return d; }
+
+$('tabLogin').onclick=()=>setMode('login'); $('tabReg').onclick=()=>setMode('register');
+function setMode(m){ mode=m; $('tabLogin').classList.toggle('on',m==='login'); $('tabReg').classList.toggle('on',m==='register');
+  $('regFields').classList.toggle('hidden',m!=='register'); $('submit').textContent=m==='login'?'LOG IN':'CREATE ACCOUNT'; $('err').textContent=''; }
+$('submit').onclick=async()=>{ $('err').textContent='';
+  const body={email:$('fEmail').value.trim(),password:$('fPass').value};
+  if(mode==='register'){ body.name=$('fName').value.trim(); body.jersey=$('fJersey').value||null; body.position=$('fPos').value.trim(); }
+  try{ const path=mode==='login'?'/api/auth/login':'/api/player/register';
+    const d=await api(path,{method:'POST',body:JSON.stringify(body)});
+    token=d.token; localStorage.setItem('axon_player_token',token); showDash();
+  }catch(e){ $('err').textContent=e.message; } };
+$('logout').onclick=()=>{ token=''; localStorage.removeItem('axon_player_token');
+  $('dash').classList.add('hidden'); $('authView').classList.remove('hidden'); $('logout').classList.add('hidden'); };
+
+async function showDash(){
+  let me; try{ me=await api('/api/player/me'); }
+  catch(e){ $('err').textContent='This login has no player profile. '+(e.message||''); return $('logout').onclick(); }
+  $('authView').classList.add('hidden'); $('dash').classList.remove('hidden'); $('logout').classList.remove('hidden');
+  render(me);
+  const {impacts}=await api('/api/player/impacts');
+  $('impacts').innerHTML = impacts.length ? impacts.map(i=>`
+    <div class="impact"><div class="t">${fmt(i.created_at)}</div>
+      <div style="text-align:right"><div class="mono">${i.linear_g} g · ${i.angular_accel} rad/s²</div>
+        <div class="sev ${i.severity}">${i.severity.toUpperCase()}</div></div></div>`).join('')
+    : '<div class="empty">No impacts recorded yet.</div>';
+}
+function render(me){
+  $('who').textContent=me.player.name;
+  $('whoMeta').textContent=`${me.player.jersey?('#'+me.player.jersey+' · '):''}${me.player.position||'Player'}`;
+  $('sImpacts').textContent=me.stats.impacts; $('sFlag').textContent=me.stats.flagged; $('sPeak').textContent=me.stats.peak_g;
+  const b=$('banner'); b.className='banner';
+  const states={
+    cleared:['b-cleared','CLEARED TO PLAY','No recent concussion-risk impacts. Keep checking in after every session.','● OK'],
+    flagged:['b-flagged','FLAGGED — SEE TRAINER','A concussion-risk impact was recorded. Sit out and complete an evaluation before returning.','▲ ALERT'],
+    monitor:['b-monitor','MONITORING','You reported symptoms. A trainer should clear you before your next session.','◆ HOLD'],
+  };
+  const [cls,title,sub,ico]=states[me.clearance]||states.cleared;
+  b.classList.add(cls); $('bTitle').textContent=title; $('bSub').textContent=sub; $('bIco').textContent=ico;
+  $('ciNote').textContent = me.checkin ? `Last check-in: ${me.checkin.status==='ok'?'felt OK':'reported symptoms'} · ${fmt(me.checkin.created_at)}` : 'No check-in yet today.';
+}
+window.checkin=async(status)=>{ await api('/api/player/checkin',{method:'POST',body:JSON.stringify({status})});
+  const me=await api('/api/player/me'); render(me); };
+const fmt=(s)=>{ try{ return new Date(s.replace(' ','T')+'Z').toLocaleString(); }catch{ return s; } };
+
+if(token) showDash(); else setMode('login');
+</script>
+</body>
+</html>

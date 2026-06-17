@@ -175,4 +175,55 @@ app.get('/api/stats', auth, (req, res) => {
   res.json({ players, impacts: total, flagged, peak_g: Math.round(peak) });
 });
 
+// ---- player portal (role: player) ----
+const linkedPlayer = (userId) => db.prepare('SELECT * FROM players WHERE user_id = ?').get(userId);
+
+app.post('/api/player/register', (req, res) => {
+  const { email, password, name, jersey, position } = req.body || {};
+  if (!email || !password || !name) return res.status(400).json({ error: 'email, password, name required' });
+  if (String(password).length < 6) return res.status(400).json({ error: 'password must be at least 6 characters' });
+  const lc = String(email).toLowerCase();
+  if (db.prepare('SELECT id FROM users WHERE email = ?').get(lc)) return res.status(409).json({ error: 'Email already registered' });
+
+  const uid = db.prepare('INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)')
+    .run(lc, bcrypt.hashSync(String(password), 10), name, 'player').lastInsertRowid;
+  db.prepare('INSERT INTO players (owner_id, user_id, name, jersey, position) VALUES (?, ?, ?, ?, ?)')
+    .run(uid, uid, name, jersey ?? null, position || null);
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(uid);
+  res.status(201).json({ token: sign(user), user: publicUser(user) });
+});
+
+app.get('/api/player/me', auth, (req, res) => {
+  const p = linkedPlayer(req.user.id);
+  if (!p) return res.status(404).json({ error: 'No player profile for this account' });
+  const one = (q) => db.prepare(q).get(p.id);
+  const stats = {
+    impacts: one('SELECT COUNT(*) c FROM impacts WHERE player_id = ?').c,
+    flagged: one('SELECT COUNT(*) c FROM impacts WHERE player_id = ? AND flagged = 1').c,
+    peak_g: Math.round(one('SELECT MAX(linear_g) m FROM impacts WHERE player_id = ?').m || 0),
+    last: one('SELECT * FROM impacts WHERE player_id = ? ORDER BY created_at DESC LIMIT 1') || null,
+  };
+  const checkin = one('SELECT * FROM checkins WHERE player_id = ? ORDER BY created_at DESC LIMIT 1') || null;
+  const lastFlag = one('SELECT created_at FROM impacts WHERE player_id = ? AND flagged = 1 ORDER BY created_at DESC LIMIT 1');
+  let clearance = 'cleared';
+  if (checkin && checkin.status === 'symptoms') clearance = 'monitor';
+  else if (lastFlag && (!checkin || lastFlag.created_at > checkin.created_at)) clearance = 'flagged';
+  res.json({ player: { id: p.id, name: p.name, jersey: p.jersey, position: p.position }, stats, checkin, clearance });
+});
+
+app.get('/api/player/impacts', auth, (req, res) => {
+  const p = linkedPlayer(req.user.id);
+  if (!p) return res.status(404).json({ error: 'No player profile' });
+  res.json({ impacts: db.prepare('SELECT * FROM impacts WHERE player_id = ? ORDER BY created_at DESC LIMIT 50').all(p.id) });
+});
+
+app.post('/api/player/checkin', auth, (req, res) => {
+  const p = linkedPlayer(req.user.id);
+  if (!p) return res.status(404).json({ error: 'No player profile' });
+  const { status, note } = req.body || {};
+  if (!['ok', 'symptoms'].includes(status)) return res.status(400).json({ error: "status must be 'ok' or 'symptoms'" });
+  db.prepare('INSERT INTO checkins (player_id, status, note) VALUES (?, ?, ?)').run(p.id, status, note || null);
+  res.status(201).json({ ok: true });
+});
+
 app.listen(PORT, () => console.log(`Axon backend listening on http://localhost:${PORT}`));

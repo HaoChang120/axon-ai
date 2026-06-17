@@ -39,8 +39,21 @@ db.exec(`
     FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS checkins (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id   INTEGER NOT NULL,
+    status      TEXT NOT NULL,         -- ok | symptoms
+    note        TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
+  );
+
   CREATE INDEX IF NOT EXISTS idx_players_owner ON players(owner_id);
   CREATE INDEX IF NOT EXISTS idx_impacts_player ON impacts(player_id);
+  CREATE INDEX IF NOT EXISTS idx_checkins_player ON checkins(player_id);
 `);
+
+// migration: link a player record to a login account (role 'player')
+try { db.exec('ALTER TABLE players ADD COLUMN user_id INTEGER'); } catch { /* column exists */ }
 
 module.exports = db;
