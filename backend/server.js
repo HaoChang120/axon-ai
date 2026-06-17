@@ -42,6 +42,46 @@ function ownPlayer(userId, playerId) {
 // ---- health ----
 app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'axon-backend', time: new Date().toISOString() }));
 
+// ---- public demo (no auth) — lets the marketing site log/read impacts ----
+// All site "SIMULATE IMPACT" events land on one shared demo player.
+function ensureDemoPlayer() {
+  let u = db.prepare('SELECT * FROM users WHERE email = ?').get('demo@axon.ai');
+  if (!u) {
+    const info = db.prepare('INSERT INTO users (email, password_hash, name, team, role) VALUES (?, ?, ?, ?, ?)')
+      .run('demo@axon.ai', bcrypt.hashSync('public-demo-no-login', 10), 'Public Demo', 'Axon Field Demo', 'demo');
+    u = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
+  }
+  let p = db.prepare('SELECT * FROM players WHERE owner_id = ? AND name = ?').get(u.id, 'Field Demo');
+  if (!p) {
+    const info = db.prepare('INSERT INTO players (owner_id, name, jersey, position) VALUES (?, ?, ?, ?)')
+      .run(u.id, 'Field Demo', 0, 'Demo');
+    p = db.prepare('SELECT * FROM players WHERE id = ?').get(info.lastInsertRowid);
+  }
+  return p.id;
+}
+const DEMO_PLAYER = ensureDemoPlayer();
+
+const platformTotals = () => ({
+  players: db.prepare('SELECT COUNT(*) c FROM players').get().c,
+  impacts: db.prepare('SELECT COUNT(*) c FROM impacts').get().c,
+  flagged: db.prepare('SELECT COUNT(*) c FROM impacts WHERE flagged = 1').get().c,
+});
+
+app.get('/api/public/stats', (_req, res) => res.json(platformTotals()));
+
+app.post('/api/public/impacts', (req, res) => {
+  let { linear_g, angular_accel } = req.body || {};
+  linear_g = Number(linear_g); angular_accel = Number(angular_accel);
+  if (!isFinite(linear_g) || !isFinite(angular_accel))
+    return res.status(400).json({ error: 'linear_g, angular_accel required' });
+  linear_g = Math.max(0, Math.min(200, linear_g));            // clamp to sane sensor range
+  angular_accel = Math.max(0, Math.min(15000, angular_accel));
+  const { severity, flagged } = classify(linear_g, angular_accel);
+  db.prepare('INSERT INTO impacts (player_id, linear_g, angular_accel, severity, flagged) VALUES (?, ?, ?, ?, ?)')
+    .run(DEMO_PLAYER, Math.round(linear_g * 10) / 10, Math.round(angular_accel), severity, flagged);
+  res.status(201).json({ severity, flagged, totals: platformTotals() });
+});
+
 // ---- auth ----
 app.post('/api/auth/register', (req, res) => {
   const { email, password, name, team } = req.body || {};

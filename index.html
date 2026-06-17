@@ -210,6 +210,7 @@
   <div class="nav-links">
     <a href="#mission">MISSION</a><a href="#system">SYSTEM</a><a href="#pipeline">PIPELINE</a>
     <a href="#detect">DETECTION</a><a href="#research">RESEARCH</a><a href="#cta">CONTACT</a>
+    <a id="consoleLink" target="_blank" rel="noopener" style="color:var(--cyan);opacity:.9">CONSOLE ↗</a>
   </div>
 </nav>
 
@@ -223,6 +224,7 @@
   <div class="tbar"><i style="width:88%"></i></div>
   <div class="trow"><span>ARRAY STATUS</span><b id="t-status" class="status-ok">NOMINAL</b></div>
   <div class="tmodel"><span>ACTIVE MODEL</span><b id="t-model">NEURAL CORTEX</b></div>
+  <div class="tmodel"><span id="be-label" style="color:var(--dim)">○ BACKEND OFFLINE</span><b id="be-count"></b></div>
 </div>
 
 <div class="switcher" id="switcher">
@@ -678,16 +680,42 @@ function triggerImpact(strong){
   if(strong) alertTimer=2.6;
 }
 
+/* ---- backend wiring ---- */
+// Point this at your deployed backend (e.g. https://axon-backend.onrender.com).
+// Defaults to the local backend (run: cd backend && npm start).
+const AXON_API = (location.hostname==='localhost'||location.hostname==='127.0.0.1')
+  ? 'http://localhost:4000' : 'http://localhost:4000';
+const beLabel=document.getElementById('be-label'), beCount=document.getElementById('be-count');
+document.getElementById('consoleLink').href=AXON_API;
+let backendOn=false;
+function setBackend(on,impacts){ backendOn=on;
+  beLabel.textContent=on?'● BACKEND LIVE':'○ BACKEND OFFLINE';
+  beLabel.style.color=on?'#3df2ff':'#6f8197';
+  beCount.textContent=(on&&impacts!=null)?impacts.toLocaleString()+' logged':'';
+}
+async function pollBackend(){
+  try{ const r=await fetch(AXON_API+'/api/public/stats',{cache:'no-store'}); if(!r.ok) throw 0;
+    const d=await r.json(); setBackend(true,d.impacts); }
+  catch{ setBackend(false); }
+}
+pollBackend(); setInterval(pollBackend,15000);
+
 const simBtn=document.getElementById('simBtn'), simOut=document.getElementById('simOut');
 simBtn.addEventListener('click',()=>{
   triggerImpact(true);
   simBtn.classList.add('alerted'); simBtn.textContent='IMPACT DETECTED';
   simOut.className='sim-readout alert';
-  let gg=0; const peak=75+Math.floor(Math.random()*30);
+  const peak=75+Math.floor(Math.random()*30), ang=4500+Math.floor(Math.random()*2500);
+  let gg=0;
   const ramp=setInterval(()=>{ gg+=Math.ceil((peak-gg)/3)+2; if(gg>=peak){gg=peak;clearInterval(ramp);}
-    simOut.textContent=`LINEAR ${gg}g · ANGULAR ${4500+Math.floor(Math.random()*2500)} rad/s² · CONCUSSION RISK FLAGGED`; },40);
+    simOut.textContent=`LINEAR ${gg}g · ANGULAR ${ang} rad/s² · CONCUSSION RISK FLAGGED`; },40);
+  // log the event to the backend (graceful no-op if offline)
+  fetch(AXON_API+'/api/public/impacts',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({linear_g:peak,angular_accel:ang})})
+    .then(r=>r.ok?r.json():null).then(d=>{ if(d) setBackend(true,d.totals.impacts); }).catch(()=>{});
   setTimeout(()=>{ simBtn.classList.remove('alerted'); simBtn.textContent='SIMULATE IMPACT';
-    simOut.className='sim-readout ok'; simOut.textContent='ALERT DISPATCHED — ARRAY RE-ARMED'; },2800);
+    simOut.className='sim-readout ok';
+    simOut.textContent=backendOn?'ALERT DISPATCHED — LOGGED TO BACKEND':'ALERT DISPATCHED — ARRAY RE-ARMED'; },2800);
 });
 
 /* ============ model switcher ============ */
