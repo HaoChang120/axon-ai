@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AXON AI — Coach Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#04060a;--bg2:#0a121c;--cyan:#3df2ff;--red:#ff4d5e;--amber:#ffb347;--ink:#e8f4ff;--dim:#6f8197;--line:rgba(61,242,255,.16)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:"Space Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(42,108,255,.12),transparent 60%)}
+  a{color:var(--cyan)}
+  .mono{font-family:"JetBrains Mono",monospace}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 22px 80px}
+  header{display:flex;justify-content:space-between;align-items:center;padding:6px 0 26px;border-bottom:1px solid var(--line);margin-bottom:30px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:600;letter-spacing:.26em}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+  .ghost{background:transparent;border:1px solid var(--line);color:var(--dim);font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.16em;padding:9px 16px;cursor:pointer;transition:.25s}
+  .ghost:hover{color:var(--ink);border-color:var(--cyan)}
+
+  /* auth */
+  .auth{max-width:380px;margin:8vh auto 0;border:1px solid var(--line);background:rgba(10,18,28,.6);backdrop-filter:blur(8px);padding:34px}
+  .auth h1{font-size:26px;font-weight:600;margin-bottom:6px;letter-spacing:-.01em}
+  .auth p{color:var(--dim);font-size:13px;margin-bottom:22px}
+  .tabs{display:flex;gap:4px;margin-bottom:20px}
+  .tabs button{flex:1;background:transparent;border:1px solid var(--line);color:var(--dim);font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.16em;padding:11px;cursor:pointer}
+  .tabs button.on{background:var(--cyan);color:var(--bg);border-color:var(--cyan)}
+  label{display:block;font-size:11px;letter-spacing:.1em;color:var(--dim);margin:14px 0 6px;font-family:"JetBrains Mono",monospace}
+  input,select{width:100%;background:#070d15;border:1px solid var(--line);color:var(--ink);padding:12px;font-family:inherit;font-size:14px}
+  input:focus,select:focus{outline:none;border-color:var(--cyan)}
+  .btn{width:100%;margin-top:22px;background:var(--cyan);color:var(--bg);border:0;padding:14px;font-family:"JetBrains Mono",monospace;
+    font-size:12px;letter-spacing:.2em;cursor:pointer;transition:.25s}
+  .btn:hover{box-shadow:0 0 26px rgba(61,242,255,.5)}
+  .err{color:var(--red);font-size:12px;margin-top:14px;min-height:16px;font-family:"JetBrains Mono",monospace}
+  .hint{margin-top:18px;font-size:11px;color:var(--dim);font-family:"JetBrains Mono",monospace;line-height:1.7}
+
+  /* dashboard */
+  .hidden{display:none}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:30px}
+  .stat{background:var(--bg2);padding:20px}
+  .stat .n{font-size:32px;font-weight:600;color:var(--cyan)}
+  .stat .l{font-size:10px;letter-spacing:.2em;color:var(--dim);margin-top:6px;font-family:"JetBrains Mono",monospace}
+  .grid{display:grid;grid-template-columns:1fr 1.3fr;gap:26px}
+  .card{border:1px solid var(--line);background:rgba(10,18,28,.5);padding:22px}
+  .card h2{font-size:13px;letter-spacing:.2em;color:var(--cyan);font-family:"JetBrains Mono",monospace;margin-bottom:18px;display:flex;justify-content:space-between}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(61,242,255,.08)}
+  .row:last-child{border:0}
+  .pname{font-weight:500}.pmeta{font-size:11px;color:var(--dim);font-family:"JetBrains Mono",monospace}
+  .pill{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.1em;padding:4px 9px;border:1px solid var(--line);color:var(--dim)}
+  .pill.flag{color:var(--red);border-color:rgba(255,77,94,.4)}
+  .sev{font-family:"JetBrains Mono",monospace;font-size:11px}
+  .sev.routine{color:var(--dim)}.sev.elevated{color:var(--amber)}.sev.concussion-risk{color:var(--red)}
+  .mini{display:flex;gap:8px;margin-top:14px}
+  .mini input{flex:1}.mini button{flex:none;width:auto;padding:12px 16px;margin:0}
+  .log-btn{margin-top:8px;font-size:11px}
+  .empty{color:var(--dim);font-size:13px;padding:10px 0}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="dot"></span>AXON&nbsp;AI · COACH CONSOLE</div>
+    <button class="ghost hidden" id="logout">LOG OUT</button>
+  </header>
+
+  <!-- AUTH -->
+  <div class="auth" id="authView">
+    <h1>Sideline Console</h1>
+    <p>Sign in to monitor player impact telemetry.</p>
+    <div class="tabs">
+      <button class="on" id="tabLogin">LOG IN</button>
+      <button id="tabReg">REGISTER</button>
+    </div>
+    <div id="regName" class="hidden"><label>NAME</label><input id="fName" placeholder="Coach name" /></div>
+    <div id="regTeam" class="hidden"><label>TEAM (optional)</label><input id="fTeam" placeholder="Program / school" /></div>
+    <label>EMAIL</label><input id="fEmail" type="email" placeholder="you@team.com" />
+    <label>PASSWORD</label><input id="fPass" type="password" placeholder="••••••••" />
+    <button class="btn" id="submit">LOG IN</button>
+    <div class="err" id="err"></div>
+    <div class="hint">Demo login &mdash; <b>coach@axon.ai</b> / <b>axon1234</b><br>(run <span class="mono">npm run seed</span> first)</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dash" class="hidden">
+    <div class="stats">
+      <div class="stat"><div class="n" id="sPlayers">0</div><div class="l">PLAYERS</div></div>
+      <div class="stat"><div class="n" id="sImpacts">0</div><div class="l">IMPACTS LOGGED</div></div>
+      <div class="stat"><div class="n" id="sFlagged" style="color:var(--red)">0</div><div class="l">CONCUSSION FLAGS</div></div>
+      <div class="stat"><div class="n" id="sPeak">0</div><div class="l">PEAK g</div></div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h2>ROSTER <span class="mono" id="rosterCount"></span></h2>
+        <div id="players"></div>
+        <div class="mini">
+          <input id="pName" placeholder="Add player name" />
+          <input id="pJersey" placeholder="#" style="max-width:64px" />
+          <button class="btn" id="addPlayer" style="margin:0">ADD</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>RECENT IMPACTS</h2>
+        <div id="impacts"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = location.origin;            // backend serves this page, same origin
+let token = localStorage.getItem('axon_token') || '';
+let mode = 'login';
+
+const $ = (id) => document.getElementById(id);
+const headers = () => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) });
+async function api(path, opts = {}) {
+  const r = await fetch(API + path, { headers: headers(), ...opts });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// ---- auth UI ----
+$('tabLogin').onclick = () => setMode('login');
+$('tabReg').onclick = () => setMode('register');
+function setMode(m){ mode = m;
+  $('tabLogin').classList.toggle('on', m==='login'); $('tabReg').classList.toggle('on', m==='register');
+  $('regName').classList.toggle('hidden', m!=='register'); $('regTeam').classList.toggle('hidden', m!=='register');
+  $('submit').textContent = m==='login' ? 'LOG IN' : 'CREATE ACCOUNT'; $('err').textContent='';
+}
+$('submit').onclick = async () => {
+  $('err').textContent = '';
+  const body = { email: $('fEmail').value.trim(), password: $('fPass').value };
+  if (mode==='register'){ body.name = $('fName').value.trim(); body.team = $('fTeam').value.trim(); }
+  try {
+    const path = mode==='login' ? '/api/auth/login' : '/api/auth/register';
+    const data = await api(path, { method:'POST', body: JSON.stringify(body) });
+    token = data.token; localStorage.setItem('axon_token', token);
+    showDash();
+  } catch(e){ $('err').textContent = e.message; }
+};
+$('logout').onclick = () => { token=''; localStorage.removeItem('axon_token');
+  $('dash').classList.add('hidden'); $('authView').classList.remove('hidden'); $('logout').classList.add('hidden'); };
+
+// ---- dashboard ----
+async function showDash(){
+  try { await api('/api/me'); } catch { return $('logout').onclick(); }
+  $('authView').classList.add('hidden'); $('dash').classList.remove('hidden'); $('logout').classList.remove('hidden');
+  refresh();
+}
+async function refresh(){
+  const [{players}, {impacts}, stats] = await Promise.all([api('/api/players'), api('/api/impacts'), api('/api/stats')]);
+  $('sPlayers').textContent = stats.players; $('sImpacts').textContent = stats.impacts;
+  $('sFlagged').textContent = stats.flagged; $('sPeak').textContent = stats.peak_g;
+  $('rosterCount').textContent = players.length ? players.length + ' active' : '';
+
+  $('players').innerHTML = players.length ? players.map(p => `
+    <div class="row">
+      <div><div class="pname">${esc(p.name)}</div>
+        <div class="pmeta">${p.jersey?('#'+p.jersey+' · '):''}${esc(p.position||'—')} · ${p.impact_count} impacts</div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${p.flagged_count?`<span class="pill flag">${p.flagged_count} FLAG</span>`:''}
+        <button class="ghost log-btn" onclick="logImpact(${p.id})">LOG HIT</button>
+      </div>
+    </div>`).join('') : '<div class="empty">No players yet — add one below.</div>';
+
+  $('impacts').innerHTML = impacts.length ? impacts.map(i => `
+    <div class="row">
+      <div><div class="pname">${esc(i.player_name||'Player')} ${i.jersey?('#'+i.jersey):''}</div>
+        <div class="pmeta">${fmt(i.created_at)}</div></div>
+      <div style="text-align:right">
+        <div class="mono">${i.linear_g} g · ${i.angular_accel} rad/s²</div>
+        <div class="sev ${i.severity}">${i.severity.toUpperCase()}</div></div>
+    </div>`).join('') : '<div class="empty">No impacts logged yet.</div>';
+}
+$('addPlayer').onclick = async () => {
+  const name = $('pName').value.trim(); if(!name) return;
+  await api('/api/players', { method:'POST', body: JSON.stringify({ name, jersey: $('pJersey').value || null }) });
+  $('pName').value=''; $('pJersey').value=''; refresh();
+};
+// log a realistic impact (mostly routine, sometimes concussion-range) — mirrors the sensor feed
+window.logImpact = async (playerId) => {
+  const big = Math.random() > 0.6;
+  const linear_g = big ? Math.round((72 + Math.random()*33)*10)/10 : Math.round((10 + Math.random()*28)*10)/10;
+  const angular_accel = big ? Math.round(4500 + Math.random()*2700) : Math.round(350 + Math.random()*1600);
+  await api('/api/impacts', { method:'POST', body: JSON.stringify({ player_id: playerId, linear_g, angular_accel }) });
+  refresh();
+};
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = (s) => { try { return new Date(s.replace(' ','T')+'Z').toLocaleString(); } catch { return s; } };
+
+// boot
+if (token) showDash(); else setMode('login');
+</script>
+</body>
+</html>

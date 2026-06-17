@@ -1,0 +1,5 @@
+node_modules/
+axon.db
+axon.db-*
+*.log
+.env
