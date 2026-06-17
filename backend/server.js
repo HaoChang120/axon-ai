@@ -69,6 +69,18 @@ const platformTotals = () => ({
 
 app.get('/api/public/stats', (_req, res) => res.json(platformTotals()));
 
+// waitlist signup
+app.post('/api/public/waitlist', (req, res) => {
+  const email = String((req.body || {}).email || '').trim().toLowerCase();
+  const role = (req.body || {}).role || null;
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'valid email required' });
+  try { db.prepare('INSERT INTO waitlist (email, role) VALUES (?, ?)').run(email, role); }
+  catch { /* duplicate email — treat as success */ }
+  res.status(201).json({ ok: true, count: db.prepare('SELECT COUNT(*) c FROM waitlist').get().c });
+});
+app.get('/api/public/waitlist/count', (_req, res) =>
+  res.json({ count: db.prepare('SELECT COUNT(*) c FROM waitlist').get().c }));
+
 app.post('/api/public/impacts', (req, res) => {
   let { linear_g, angular_accel } = req.body || {};
   linear_g = Number(linear_g); angular_accel = Number(angular_accel);

@@ -89,29 +89,68 @@
   .kicker::before{content:"";width:42px;height:1px;background:var(--cyan)}
 
   .block{max-width:520px;position:relative}
-  .block::before{content:"";position:absolute;inset:-44px -60px;z-index:-1;border-radius:50%;
-    background:radial-gradient(ellipse closest-side,rgba(4,6,10,.82),rgba(4,6,10,.5) 55%,transparent 82%);
-    filter:blur(6px)}
+  .block::before{content:"";position:absolute;inset:-50px -72px;z-index:-1;border-radius:50%;
+    background:radial-gradient(ellipse closest-side,rgba(4,6,10,.95),rgba(4,6,10,.78) 58%,transparent 88%);
+    filter:blur(12px)}
   section.right{align-items:flex-end;text-align:left}
   section.right .block{text-align:left}
   section.center{align-items:center;text-align:center}
   section.center .kicker{justify-content:center}
   h2{font-size:clamp(34px,5vw,62px);line-height:1.02;font-weight:600;letter-spacing:-.02em;
-    margin-bottom:24px;text-shadow:0 2px 30px rgba(4,6,10,.8)}
-  h2 em{font-style:normal;color:transparent;-webkit-text-stroke:1px var(--cyan)}
-  .body{font-size:17px;line-height:1.7;color:var(--dim);font-weight:300;text-shadow:0 1px 16px rgba(4,6,10,.9)}
-  .body b{color:var(--ink);font-weight:500}
+    margin-bottom:24px;text-shadow:0 2px 34px rgba(4,6,10,.95),0 0 60px rgba(4,6,10,.7)}
+  h2 em{font-style:normal;color:transparent;-webkit-text-stroke:1.2px var(--cyan)}
+  .body{font-size:17px;line-height:1.72;color:#b9c7d8;font-weight:400;text-shadow:0 2px 22px rgba(4,6,10,.98)}
+  .body b{color:#fff;font-weight:600}
   .reveal{opacity:0;transform:translateY(36px);transition:opacity .95s cubic-bezier(.2,.7,.2,1),transform .95s cubic-bezier(.2,.7,.2,1)}
   .reveal.in{opacity:1;transform:none}
 
   /* hero */
   #hero{justify-content:center;align-items:flex-start}
-  .hero-title{font-size:clamp(64px,13vw,205px);line-height:.85;font-weight:700;letter-spacing:-.03em;
-    margin:0;mix-blend-mode:screen;text-shadow:0 0 60px rgba(61,242,255,.25)}
+  .hero-title{font-size:clamp(44px,8vw,120px);line-height:.88;font-weight:700;letter-spacing:-.03em;
+    margin:0;text-shadow:0 0 50px rgba(61,242,255,.3),0 4px 30px rgba(4,6,10,.6)}
   .hero-title .l2{color:transparent;-webkit-text-stroke:1.4px var(--cyan);display:block}
-  .hero-sub{max-width:540px;margin-top:28px;font-size:clamp(15px,1.5vw,19px);line-height:1.55;
-    color:var(--dim);font-weight:300}
-  .hero-sub b{color:var(--ink);font-weight:500}
+  .hero-sub{max-width:540px;margin-top:26px;font-size:clamp(15px,1.5vw,19px);line-height:1.6;
+    color:#c4d2e0;font-weight:400;text-shadow:0 2px 22px rgba(4,6,10,.98)}
+  .hero-sub b{color:#fff;font-weight:600}
+
+  /* CTA buttons */
+  .hero-cta{display:flex;gap:14px;margin-top:36px;flex-wrap:wrap}
+  .cta-primary{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.18em;background:var(--cyan);
+    color:var(--bg);border:0;padding:16px 30px;cursor:pointer;transition:.25s;text-decoration:none;display:inline-block;font-weight:500}
+  .cta-primary:hover{box-shadow:0 0 38px rgba(61,242,255,.6);transform:translateY(-2px)}
+  .cta-secondary{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.18em;background:rgba(4,6,10,.5);
+    color:var(--ink);border:1px solid var(--line);padding:16px 28px;cursor:pointer;transition:.25s;text-decoration:none;display:inline-block}
+  .cta-secondary:hover{border-color:var(--cyan);color:var(--cyan)}
+  .wl-count{margin-top:16px;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;color:var(--cyan);opacity:.85;min-height:14px}
+
+  /* waitlist modal */
+  .modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+    background:rgba(2,4,8,.8);backdrop-filter:blur(7px);padding:22px}
+  .modal.open{display:flex}
+  .modal-card{width:100%;max-width:420px;border:1px solid var(--line);background:#070d15;padding:36px;position:relative;
+    box-shadow:0 0 80px rgba(61,242,255,.12)}
+  .modal-card h3{font-size:25px;font-weight:600;margin-bottom:8px}
+  .modal-card p{color:var(--dim);font-size:14px;line-height:1.55;margin-bottom:22px}
+  .modal-card input{width:100%;background:#04080e;border:1px solid var(--line);color:var(--ink);padding:14px;
+    font-family:inherit;font-size:15px;margin-bottom:14px}
+  .modal-card input:focus{outline:none;border-color:var(--cyan)}
+  .modal-close{position:absolute;top:14px;right:18px;background:0;border:0;color:var(--dim);font-size:24px;cursor:pointer;line-height:1}
+  .modal-msg{font-family:"JetBrains Mono",monospace;font-size:12px;margin-top:8px;min-height:16px;letter-spacing:.04em}
+  .modal-msg.ok{color:var(--cyan)}.modal-msg.bad{color:var(--red)}
+
+  /* mobile nav board */
+  .hamburger{display:none;flex-direction:column;gap:5px;background:0;border:0;cursor:pointer;padding:8px}
+  .hamburger span{width:26px;height:2px;background:var(--ink);transition:.25s;transform-origin:center}
+  .hamburger.on span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .hamburger.on span:nth-child(2){opacity:0}
+  .hamburger.on span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  .mobile-board{position:fixed;inset:0;z-index:25;background:rgba(4,6,10,.97);backdrop-filter:blur(10px);
+    display:none;flex-direction:column;justify-content:center;align-items:center;gap:6px}
+  .mobile-board.open{display:flex}
+  .mobile-board a{color:var(--ink);text-decoration:none;font-family:"JetBrains Mono",monospace;font-size:15px;
+    letter-spacing:.22em;padding:14px}
+  .mobile-board a:hover{color:var(--cyan)}
+  .mobile-board .mb-cta{margin-top:20px}
   .hero-meta{margin-top:44px;display:flex;gap:46px;font-family:"JetBrains Mono",monospace}
   .hero-meta div{display:flex;flex-direction:column;gap:6px}
   .hero-meta .num{font-size:30px;color:var(--cyan);font-weight:500}
@@ -181,12 +220,23 @@
   .load-txt{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.34em;color:var(--dim)}
 
   @media(max-width:860px){
-    nav{padding:18px 22px}.nav-links{display:none}
-    section{padding:0 22px}.block{max-width:100%}
+    nav{padding:16px 18px}.nav-links{display:none}.hamburger{display:flex}
+    section{padding:0 18px}.block{max-width:100%}
     section.right{align-items:flex-start;text-align:left}
+    section.center{align-items:flex-start;text-align:left}
+    section.center .kicker{justify-content:flex-start}
+    #cta{text-align:left}.footer-meta{justify-content:flex-start}
     .telemetry{display:none}.specs{grid-template-columns:1fr}
-    .hero-meta{gap:26px}.footer-meta{gap:26px}
-    .switcher button{padding:9px 13px}
+    .hero-meta{gap:24px}.footer-meta{gap:22px}
+    /* solid panel behind copy so the 3D scene never competes with text */
+    .block{background:rgba(5,8,13,.82);backdrop-filter:blur(4px);padding:24px 20px;
+      border:1px solid rgba(61,242,255,.1)}
+    .block::before{display:none}
+    .hero-title{text-shadow:0 0 40px rgba(61,242,255,.3)}
+    /* dim the 3D layer a touch on phones */
+    #scene{opacity:.62}
+    .switcher{bottom:22px;padding:4px}.switcher button{padding:10px 14px;font-size:9px}
+    .cta-primary,.cta-secondary{padding:15px 22px;font-size:11px}
   }
 </style>
 </head>
@@ -212,7 +262,19 @@
     <a href="#detect">DETECTION</a><a href="#research">RESEARCH</a><a href="#cta">CONTACT</a>
     <a id="consoleLink" target="_blank" rel="noopener" style="color:var(--cyan);opacity:.9">CONSOLE ↗</a>
   </div>
+  <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
 </nav>
+
+<div class="mobile-board" id="mobileBoard">
+  <a href="#mission" data-close>MISSION</a>
+  <a href="#system" data-close>SYSTEM</a>
+  <a href="#pipeline" data-close>PIPELINE</a>
+  <a href="#detect" data-close>DETECTION</a>
+  <a href="#research" data-close>RESEARCH</a>
+  <a href="#cta" data-close>CONTACT</a>
+  <a id="mbConsole" target="_blank" rel="noopener" data-close style="color:var(--cyan)">CONSOLE ↗</a>
+  <button class="cta-primary mb-cta js-waitlist" data-close>JOIN THE WAITLIST</button>
+</div>
 
 <div class="telemetry" id="tel">
   <h4>LIVE TELEMETRY <span id="tel-clock">00:00</span></h4>
@@ -244,6 +306,11 @@
         <div><span class="num">&lt;50ms</span><span class="lbl">DETECTION LATENCY</span></div>
         <div><span class="num">$3B</span><span class="lbl">SAFETY MARKET</span></div>
       </div>
+      <div class="hero-cta">
+        <button class="cta-primary js-waitlist">JOIN THE WAITLIST</button>
+        <a class="cta-secondary" href="#system">EXPLORE THE SYSTEM</a>
+      </div>
+      <div class="wl-count" id="wlCount"></div>
     </div>
   </section>
 
@@ -320,7 +387,10 @@
       <div class="kicker">05 / DEPLOYMENT</div>
       <h2>Built before<br>the <em>blueprint.</em></h2>
       <p class="body" style="max-width:600px;margin:0 auto">A completed product with published research behind it — built by its founder, Hao Chang, and piloting with high school football programs in Orange County. The detection layer that youth sports has been missing.</p>
-      <a class="contact" href="mailto:haochang164@gmail.com">haochang164@gmail.com</a>
+      <div class="hero-cta" style="justify-content:center">
+        <button class="cta-primary js-waitlist">JOIN THE WAITLIST</button>
+        <a class="contact" href="mailto:haochang164@gmail.com" style="margin-top:0;padding:16px 26px">haochang164@gmail.com</a>
+      </div>
       <div class="footer-meta">
         <span>PROJECT LEAD — HAO CHANG</span>
         <span>STATUS — PILOT PHASE 2026</span>
@@ -334,6 +404,17 @@
   <span>AXON AI © 2026 — NEURAL SENSOR PLATFORM</span>
   <span>DESIGNED FOR THE ATHLETES WHO TAKE THE HIT</span>
 </footer>
+
+<div class="modal" id="wlModal">
+  <div class="modal-card">
+    <button class="modal-close" id="wlClose" aria-label="Close">×</button>
+    <h3>Join the Waitlist</h3>
+    <p>Be first to pilot Axon AI with your program. Drop your email and we'll reach out.</p>
+    <input id="wlEmail" type="email" placeholder="you@email.com" autocomplete="email" />
+    <button class="cta-primary" id="wlSubmit" style="width:100%">JOIN THE WAITLIST</button>
+    <div class="modal-msg" id="wlMsg"></div>
+  </div>
+</div>
 
 <script type="importmap">
 { "imports": {
@@ -381,8 +462,9 @@ const noise = buildSimplex();
 
 /* ============ renderer / scene ============ */
 const canvas=document.getElementById('scene');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
-renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const IS_MOBILE = innerWidth < 760;
+const renderer=new THREE.WebGLRenderer({canvas,antialias:!IS_MOBILE,alpha:true});
+renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, IS_MOBILE?1.5:2));
 const scene=new THREE.Scene(); scene.fog=new THREE.FogExp2(0x04060a,0.05);
 const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,0.1,100); camera.position.set(0,0,9);
 
@@ -443,7 +525,7 @@ function visorMat(){
 /* ============ MODEL: BRAIN ============ */
 function buildBrain(){
   const group=new THREE.Group();
-  const geo=new THREE.IcosahedronGeometry(1.55,5);
+  const geo=new THREE.IcosahedronGeometry(1.55, IS_MOBILE?4:5);
   const pos=geo.attributes.position;
   const v=new THREE.Vector3();
   for(let i=0;i<pos.count;i++){
@@ -649,7 +731,7 @@ scene.add(stars);
 /* ============ postprocessing ============ */
 const composer=new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene,camera));
-composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.9,0.6,0.18));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), IS_MOBILE?0.6:0.9, 0.6, 0.18));
 
 /* ============ interaction state ============ */
 let mx=0,my=0,tmx=0,tmy=0;
@@ -699,6 +781,40 @@ async function pollBackend(){
   catch{ setBackend(false); }
 }
 pollBackend(); setInterval(pollBackend,15000);
+
+/* ---- waitlist ---- */
+const wlModal=document.getElementById('wlModal'), wlEmail=document.getElementById('wlEmail'), wlMsg=document.getElementById('wlMsg');
+const openWaitlist=()=>{ wlModal.classList.add('open'); wlMsg.textContent=''; wlMsg.className='modal-msg'; setTimeout(()=>wlEmail.focus(),60); };
+const closeWaitlist=()=>wlModal.classList.remove('open');
+document.querySelectorAll('.js-waitlist').forEach(b=>b.addEventListener('click',openWaitlist));
+document.getElementById('wlClose').addEventListener('click',closeWaitlist);
+wlModal.addEventListener('click',e=>{ if(e.target===wlModal) closeWaitlist(); });
+async function submitWaitlist(){
+  const email=wlEmail.value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ wlMsg.className='modal-msg bad'; wlMsg.textContent='Enter a valid email.'; return; }
+  wlMsg.className='modal-msg'; wlMsg.textContent='Submitting…';
+  try{
+    const r=await fetch(AXON_API+'/api/public/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    if(!r.ok) throw 0; const d=await r.json();
+    wlMsg.className='modal-msg ok'; wlMsg.textContent=`You're in — #${d.count} on the waitlist.`;
+    wlEmail.value=''; setWlCount(d.count);
+  }catch{
+    // backend unreachable -> fall back to email so the signup still reaches us
+    wlMsg.className='modal-msg ok'; wlMsg.textContent='Opening your email app to finish…';
+    location.href=`mailto:haochang164@gmail.com?subject=${encodeURIComponent('Axon AI Waitlist')}&body=${encodeURIComponent('Please add me to the Axon AI waitlist: '+email)}`;
+  }
+}
+document.getElementById('wlSubmit').addEventListener('click',submitWaitlist);
+wlEmail.addEventListener('keydown',e=>{ if(e.key==='Enter') submitWaitlist(); });
+function setWlCount(n){ const el=document.getElementById('wlCount'); if(el&&n!=null) el.textContent='▸ '+n+' already on the waitlist'; }
+fetch(AXON_API+'/api/public/waitlist/count').then(r=>r.ok?r.json():null).then(d=>{ if(d&&d.count>0) setWlCount(d.count); }).catch(()=>{});
+
+/* ---- mobile nav board ---- */
+const hamburger=document.getElementById('hamburger'), mobileBoard=document.getElementById('mobileBoard');
+document.getElementById('mbConsole').href=AXON_API;
+const closeBoard=()=>{ mobileBoard.classList.remove('open'); hamburger.classList.remove('on'); document.body.style.overflow=''; };
+hamburger.addEventListener('click',()=>{ const open=mobileBoard.classList.toggle('open'); hamburger.classList.toggle('on',open); document.body.style.overflow=open?'hidden':''; });
+mobileBoard.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click',closeBoard));
 
 const simBtn=document.getElementById('simBtn'), simOut=document.getElementById('simOut');
 simBtn.addEventListener('click',()=>{

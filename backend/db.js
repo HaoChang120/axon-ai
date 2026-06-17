@@ -48,6 +48,13 @@ db.exec(`
     FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS waitlist (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    email       TEXT UNIQUE NOT NULL,
+    role        TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   CREATE INDEX IF NOT EXISTS idx_players_owner ON players(owner_id);
   CREATE INDEX IF NOT EXISTS idx_impacts_player ON impacts(player_id);
   CREATE INDEX IF NOT EXISTS idx_checkins_player ON checkins(player_id);
