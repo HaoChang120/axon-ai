@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AXON — 30-Day Content Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#04060a;--panel:#0a121c;--cyan:#3df2ff;--amber:#ffb347;--green:#3dffb0;--ink:#e8f4ff;--dim:#6f8197;--line:rgba(61,242,255,.14)}
+  *{margin:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:"Space Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(61,242,255,.08),transparent 60%);padding:46px 22px 90px}
+  .wrap{max-width:980px;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.24em;font-size:14px;margin-bottom:26px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+  h1{font-size:clamp(30px,5vw,48px);font-weight:700;letter-spacing:-.02em;line-height:1.05}
+  .sub{color:var(--dim);margin:14px 0 8px;font-size:16px;line-height:1.5;max-width:60ch}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:22px 0 30px;font-family:"JetBrains Mono",monospace;font-size:12px}
+  .legend span{display:flex;align-items:center;gap:7px;color:var(--dim)}
+  .tag{width:10px;height:10px;border-radius:2px;display:inline-block}
+  .p1{background:var(--cyan)}.p2{background:var(--amber)}.p3{background:var(--green)}
+  table{width:100%;border-collapse:collapse;border:1px solid var(--line);font-size:14px}
+  th{text-align:left;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.14em;color:var(--cyan);
+    padding:14px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+  td{padding:13px 14px;border-bottom:1px solid rgba(61,242,255,.07);vertical-align:top;line-height:1.45}
+  tr:hover td{background:rgba(61,242,255,.03)}
+  .day{font-family:"JetBrains Mono",monospace;color:var(--dim);white-space:nowrap}
+  .pill{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.04em;padding:3px 8px;border-radius:3px;white-space:nowrap}
+  .b1{color:var(--cyan);border:1px solid rgba(61,242,255,.4)}
+  .b2{color:var(--amber);border:1px solid rgba(255,179,71,.4)}
+  .b3{color:var(--green);border:1px solid rgba(61,255,176,.4)}
+  .fmt{color:var(--dim);font-family:"JetBrains Mono",monospace;font-size:11px;white-space:nowrap}
+  .hook{font-weight:500}
+  .cta{color:var(--dim);font-size:12px;font-family:"JetBrains Mono",monospace}
+  footer{margin-top:28px;color:var(--dim);font-size:13px;font-family:"JetBrains Mono",monospace}
+  footer a{color:var(--cyan);text-decoration:none}
+  @media(max-width:680px){.fmt,.cta{display:none}td,th{padding:10px 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><span class="dot"></span>AXON</div>
+  <h1>30-Day Content Calendar</h1>
+  <p class="sub">Three pillars — <b style="color:var(--cyan)">Athlete Safety &amp; Education</b>, <b style="color:var(--amber)">Founder Story</b>, <b style="color:var(--green)">Tech in Action</b> — across two formats: short-form video &amp; carousels. Mission: make football safer for all.</p>
+  <div class="legend">
+    <span><i class="tag p1"></i>Safety &amp; Education</span>
+    <span><i class="tag p2"></i>Founder Story</span>
+    <span><i class="tag p3"></i>Tech in Action</span>
+  </div>
+  <table>
+    <thead><tr><th>Day</th><th>Pillar</th><th>Format</th><th>Hook / Title</th><th>CTA</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <footer>AXON · Concussion Detection — built by Hao Chang · <a href="mailto:haochang164@gmail.com">haochang164@gmail.com</a></footer>
+</div>
+<script>
+const P={S:["b1","Safety"],F:["b2","Founder"],T:["b3","Tech"]};
+const rows=[
+["1","F","Short video","\"I got two concussions playing football — so I built a helmet that detects them.\" (60-sec origin)","Follow for the build"],
+["2","S","Carousel","What happens to your brain at 95 g — and why a second hit is the real danger","Save & share with a parent"],
+["3","T","Short video","Watch Axon detect a hit in real time (bench sensor demo)","Comment 'how'"],
+["4","S","Carousel","5 concussion myths coaches still believe","Tag a coach"],
+["5","F","Short video","Day in the life: soldering sensors into a helmet at 16","Follow the journey"],
+["6","T","Carousel","How Axon works in 4 steps: sense → score → flag → alert","Learn more in bio"],
+["7","S","Short video","The 15-second sideline test that misses most concussions","Share this"],
+["8","F","Carousel","From a hospital bed to Vienna: how my injury became published research","Read the paper"],
+["9","T","Short video","g-force explained: routine hit vs. concussive hit (live readout)","Save for later"],
+["10","S","Carousel","Parents: what to ask before your kid takes the field","Send to a parent"],
+["11","F","Short video","Why I almost quit football — and built this instead","Follow"],
+["12","T","Carousel","Inside the helmet: BNO085 sensor + Particle Boron, shown","Comment questions"],
+["13","S","Short video","Second-impact syndrome in 30 seconds (why speed matters)","Share"],
+["14","F","Carousel","Week 1 of our pilot with a real HS football team","Follow for results"],
+["15","T","Short video","I dropped a helmet to trigger an 'impact alert' — here's the coach's phone","Tag a coach"],
+["16","S","Carousel","The data gap: how concussions get missed today","Save"],
+["17","F","Short video","Q&A: 'How does a high schooler publish research?'","Ask me anything"],
+["18","T","Carousel","What a concussion looks like as data (force + rotation)","Share"],
+["19","S","Short video","Helmet ≠ concussion-proof. Here's what actually helps.","Follow"],
+["20","F","Carousel","3 things building Axon taught me about failure","Save"],
+["21","T","Short video","Real-time alert: from impact to coach's phone in <50 ms","Comment 'safe'"],
+["22","S","Carousel","Youth sports safety is a $3B problem. Here's why.","Learn more"],
+["23","F","Short video","Behind the scenes: pitching Axon at a founder bootcamp","Follow"],
+["24","T","Carousel","Coach view vs. player view: how the app works","Try the waitlist"],
+["25","S","Short video","When should a player actually sit out? (the honest answer)","Share"],
+["26","F","Carousel","Meet the helmet that started as a personal problem","Join the waitlist"],
+["27","T","Short video","Calibration day: telling a hit from a fall","Comment"],
+["28","S","Carousel","A simple concussion checklist for every sideline","Save & send"],
+["29","F","Short video","What's next for Axon (and how you can pilot it)","Join the waitlist"],
+["30","T","Carousel","30 days in: what we learned + what's shipping next","Follow for v2"],
+];
+document.getElementById('rows').innerHTML=rows.map(r=>{
+  const [cls,label]=P[r[1]];
+  return `<tr><td class="day">Day ${r[0]}</td><td><span class="pill ${cls}">${label}</span></td>
+    <td class="fmt">${r[2]}</td><td class="hook">${r[3]}</td><td class="cta">${r[4]}</td></tr>`;
+}).join('');
+</script>
+</body>
+</html>
