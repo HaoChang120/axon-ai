@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Axon AI — Real-Time Concussion Detection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e0d0b; --ink:#f6f2ea; --dim:#9a9285; --faint:#615b51;
+    --acc:#ff6a3a; --acc2:#ffb068; --card:rgba(255,255,255,.035); --line:rgba(255,255,255,.09);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;position:relative}
+  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:radial-gradient(60% 50% at 78% 0%,rgba(255,106,58,.16),transparent 60%),
+               radial-gradient(50% 40% at 0% 60%,rgba(255,176,104,.07),transparent 60%)}
+  ::selection{background:var(--acc);color:#0e0d0b}
+  .serif{font-family:"Instrument Serif",Georgia,serif;font-weight:400}
+  .it{font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-weight:400}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 32px}
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity 1s cubic-bezier(.2,.7,.2,1),transform 1s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--acc)}
+
+  /* nav */
+  nav{position:fixed;top:0;left:0;right:0;z-index:50;backdrop-filter:blur(12px);background:rgba(14,13,11,.55);border-bottom:1px solid var(--line)}
+  nav .in{max-width:1180px;margin:0 auto;padding:16px 32px;display:flex;justify-content:space-between;align-items:center}
+  .brand{font-weight:800;font-size:20px;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+  .brand i{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 14px var(--acc)}
+  .btn{display:inline-block;background:var(--ink);color:#0e0d0b;text-decoration:none;font-weight:700;font-size:14px;padding:11px 20px;border-radius:30px;cursor:pointer;border:0;font-family:inherit;transition:transform .18s,background .2s,color .2s}
+  .btn:hover{transform:translateY(-2px);background:var(--acc);color:#0e0d0b}
+  .btn.glow{background:var(--acc);box-shadow:0 8px 30px -8px var(--acc)}.btn.glow:hover{background:var(--ink)}
+  .btn.line{background:transparent;color:var(--ink);border:1px solid var(--line)}.btn.line:hover{background:rgba(255,255,255,.06);transform:translateY(-2px)}
+
+  /* 1. HERO — asymmetric split */
+  .hero{padding:160px 0 90px;display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center}
+  .hero h1{font-size:clamp(50px,7.4vw,104px);font-weight:800;line-height:.95;letter-spacing:-.035em;margin:22px 0}
+  .hero h1 .it{font-size:1.02em;color:var(--acc);letter-spacing:-.01em}
+  .hero p{max-width:46ch;font-size:clamp(16px,1.5vw,19px);color:var(--dim);line-height:1.6}
+  .hero .cta{margin-top:30px;display:flex;gap:12px;flex-wrap:wrap}
+  .hero-art{position:relative;display:flex;justify-content:center}
+  .hero-art .ring{position:absolute;inset:-6% -6% -6% -6%;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,106,58,.22),transparent 62%);filter:blur(8px)}
+  .hero-art img{position:relative;width:118%;max-width:560px;filter:drop-shadow(0 40px 60px rgba(0,0,0,.6))}
+
+  /* 2. PROBLEM — full-bleed offset numbers */
+  .problem{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:clamp(70px,10vw,120px) 0;
+    background:linear-gradient(180deg,rgba(255,106,58,.05),transparent)}
+  .problem .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:50px;align-items:end}
+  .problem h2{font-size:clamp(30px,4.6vw,56px);font-weight:800;line-height:1.02;letter-spacing:-.025em;max-width:16ch}
+  .problem h2 .it{color:var(--acc)}
+  .problem .body{color:var(--dim);font-size:17px;line-height:1.65;margin-top:22px;max-width:52ch}
+  .bigstat{display:flex;flex-direction:column;gap:30px}
+  .bigstat .n{font-size:clamp(54px,8vw,96px);font-weight:900;line-height:.85;letter-spacing:-.03em;
+    background:linear-gradient(120deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .bigstat .l{color:var(--dim);font-size:14px;margin-top:8px;max-width:30ch}
+
+  /* 3. SYSTEM — alternating split w/ annotated helmet */
+  section.pad{padding:clamp(80px,11vw,140px) 0}
+  .sysrow{display:grid;grid-template-columns:.9fr 1.1fr;gap:60px;align-items:center}
+  .sysart{position:relative}
+  .sysart img{width:100%;max-width:460px;filter:drop-shadow(0 30px 50px rgba(0,0,0,.5))}
+  .sysart .tag{position:absolute;font-family:"Schibsted Grotesk";font-size:12px;color:var(--ink);background:rgba(20,18,16,.85);
+    border:1px solid var(--line);border-radius:30px;padding:6px 12px;backdrop-filter:blur(6px)}
+  h2.big{font-size:clamp(34px,5.4vw,68px);font-weight:800;line-height:.98;letter-spacing:-.03em}
+  h2.big .it{color:var(--acc)}
+  .lead{color:var(--dim);font-size:18px;line-height:1.6;margin-top:20px;max-width:50ch}
+  .speclist{margin-top:34px;border-top:1px solid var(--line)}
+  .spec{display:flex;gap:20px;padding:20px 0;border-bottom:1px solid var(--line);align-items:baseline}
+  .spec .k{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--acc);width:90px;flex:none}
+  .spec .t{font-weight:700;font-size:18px}.spec .d{color:var(--dim);font-size:14px;margin-top:3px}
+
+  /* 4. PIPELINE — horizontal connected steps */
+  .pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:50px;counter-reset:s}
+  .step{padding:28px 24px 28px 0;border-top:2px solid var(--line);position:relative}
+  .step::before{counter-increment:s;content:counter(s,decimal-leading-zero);position:absolute;top:-2px;left:0;width:46px;height:2px;background:var(--acc)}
+  .step .num{font-family:"Instrument Serif";font-size:40px;color:var(--acc);line-height:1}
+  .step .t{font-weight:700;font-size:19px;margin:12px 0 8px}.step .d{color:var(--dim);font-size:14px;line-height:1.5}
+
+  /* 5. INSIGHTS — staggered overlap cards */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:50px}
+  .ic{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:30px;transition:transform .2s,border-color .2s,background .2s}
+  .ic:nth-child(2){transform:translateY(-26px)}.ic:nth-child(2):hover{transform:translateY(-32px)}
+  .ic:hover{transform:translateY(-6px);border-color:var(--acc);background:rgba(255,106,58,.06)}
+  .ic .ico{font-family:"Instrument Serif";font-size:30px;color:var(--acc)}
+  .ic .t{font-weight:700;font-size:20px;margin:16px 0 8px}.ic .d{color:var(--dim);font-size:14px;line-height:1.55}
+
+  /* 6. NUMBERS — full-width band */
+  .numband{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .numgrid{display:grid;grid-template-columns:repeat(3,1fr)}
+  .ncell{padding:clamp(44px,6vw,72px) 28px;border-right:1px solid var(--line);text-align:center}.ncell:last-child{border-right:0}
+  .ncell .n{font-size:clamp(48px,8vw,92px);font-weight:900;letter-spacing:-.03em;line-height:.9}.ncell .n span{color:var(--acc);font-size:.42em}
+  .ncell .l{margin-top:12px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+
+  /* 7. COMPARISON — fail vs win */
+  .vs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:46px}
+  .vbox{border:1px solid var(--line);border-radius:18px;padding:30px;background:var(--card)}
+  .vbox.win{border-color:var(--acc);background:rgba(255,106,58,.07)}
+  .vbox .m{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--dim);margin-bottom:14px}
+  .vbox.win .m{color:var(--acc)}
+  .vbox .t{font-weight:700;font-size:20px;margin-bottom:8px}.vbox .d{color:var(--dim);font-size:14px;line-height:1.55}
+
+  /* 8. RESEARCH — editorial offset */
+  .research{display:grid;grid-template-columns:.7fr 1.3fr;gap:50px;align-items:start;border-top:1px solid var(--line);padding-top:60px;margin-top:30px}
+  .research .rt{font-family:"Instrument Serif";font-size:clamp(28px,4vw,46px);line-height:1.08;letter-spacing:-.01em}
+  .research .meta{font-size:14px;color:var(--dim);line-height:2;margin-top:24px}.research .meta b{color:var(--ink);font-weight:600}
+
+  /* 9. CTA */
+  .cta-final{text-align:center;padding:clamp(90px,13vw,160px) 0}
+  .cta-final h2{font-size:clamp(44px,8vw,110px);font-weight:900;letter-spacing:-.04em;line-height:.9}
+  .cta-final h2 .it{color:var(--acc)}
+  .cta-final p{color:var(--dim);max-width:44ch;margin:22px auto 34px;font-size:17px}
+  .form{display:flex;max-width:480px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:40px;padding:6px}
+  .form input{flex:1;background:transparent;border:0;color:var(--ink);font-family:inherit;font-size:16px;padding:13px 20px}.form input:focus{outline:none}
+  .form button{border:0;background:var(--acc);color:#0e0d0b;font-family:inherit;font-weight:700;font-size:15px;padding:0 28px;border-radius:34px;cursor:pointer;transition:background .2s}.form button:hover{background:var(--ink)}
+  .msg{margin-top:16px;font-size:14px;color:var(--acc);min-height:18px}
+  footer{border-top:1px solid var(--line);padding:30px 0;color:var(--dim);font-size:13px}
+  footer .in{max-width:1180px;margin:0 auto;padding:0 32px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  footer a{color:var(--ink);text-decoration:none;font-weight:600}
+
+  @media(max-width:880px){
+    .hero,.problem .grid,.sysrow,.research{grid-template-columns:1fr;gap:34px}
+    .hero{padding-top:120px}.hero-art{order:-1}
+    .pipe{grid-template-columns:1fr 1fr}.cards,.vs{grid-template-columns:1fr}
+    .ic:nth-child(2){transform:none}.numgrid{grid-template-columns:1fr}.ncell{border-right:0;border-bottom:1px solid var(--line)}
+  }
+</style>
+</head>
+<body>
+<nav><div class="in"><div class="brand"><i></i>AXON AI</div><a class="btn" href="#join">Join the waitlist</a></div></nav>
+
+<!-- 1. HERO -->
+<header class="hero wrap">
+  <div class="reveal">
+    <div class="eyebrow">Smart helmet system</div>
+    <h1>Know <span class="it">every</span><br>hit.</h1>
+    <p>Axon AI pairs an in-helmet sensor array with machine learning to detect concussions <em>as they happen</em> — scoring acceleration, force, and rotation in real time, and alerting coaches before a second hit can land.</p>
+    <div class="cta"><a class="btn glow" href="#join">Join the waitlist</a><a class="btn line" href="#system">See how it works</a></div>
+  </div>
+  <div class="hero-art reveal"><div class="ring"></div><img src="helmet.png" alt="Axon AI smart football helmet"/></div>
+</header>
+
+<!-- 2. PROBLEM -->
+<section class="problem"><div class="wrap reveal"><div class="grid">
+  <div>
+    <div class="eyebrow">The hidden cost of impacts</div>
+    <h2 style="margin-top:18px">Most concussions go undetected, misdiagnosed, or <span class="it">ignored.</span></h2>
+    <p class="body">Head impacts slip past coaches and trainers, and the damage compounds — repeated undiagnosed hits are linked to CTE, memory loss, depression, and early-onset dementia. And it starts long before the pros.</p>
+  </div>
+  <div class="bigstat">
+    <div><div class="n">12.7%</div><div class="l">of athletes aged 8–14 didn't report a suspected concussion</div></div>
+    <div><div class="n">13.1%</div><div class="l">played through a head injury anyway</div></div>
+  </div>
+</div></div></section>
+
+<!-- 3. SYSTEM -->
+<section class="pad wrap" id="system"><div class="reveal"><div class="sysrow">
+  <div class="sysart">
+    <img src="helmet.png" alt="Axon helmet sensors"/>
+    <span class="tag" style="top:14%;left:-4%">Accelerometer</span>
+    <span class="tag" style="top:46%;right:-6%">4× pressure sensors</span>
+    <span class="tag" style="bottom:16%;left:6%">Gyroscope</span>
+  </div>
+  <div>
+    <div class="eyebrow">360° sensor suite</div>
+    <h2 class="big" style="margin-top:16px">A full array, <span class="it">built into the shell.</span></h2>
+    <p class="lead">Four pressure sensors map where every hit lands; a gyroscope and accelerometer capture how hard and how fast the head moved.</p>
+    <div class="speclist">
+      <div class="spec"><div class="k">SENSE</div><div><div class="t">4 pressure sensors</div><div class="d">Front, both sides, rear — pinpoint impact location.</div></div></div>
+      <div class="spec"><div class="k">MEASURE</div><div><div class="t">Gyroscope + accelerometer</div><div class="d">Linear force and rotational motion — both drivers of brain injury.</div></div></div>
+      <div class="spec"><div class="k">PROCESS</div><div><div class="t">On-board AI</div><div class="d">A Particle microcontroller scores every impact the instant it lands.</div></div></div>
+      <div class="spec"><div class="k">ALERT</div><div><div class="t">Cloud + mobile app</div><div class="d">Streams to the cloud; coaches get an instant phone alert.</div></div></div>
+    </div>
+  </div>
+</div></div></section>
+
+<!-- 4. PIPELINE -->
+<section class="pad wrap"><div class="reveal">
+  <div class="eyebrow">Impact → alert</div>
+  <h2 class="big" style="margin-top:16px">Four stages. <span class="it">One snap.</span></h2>
+  <div class="pipe">
+    <div class="step"><div class="num">01</div><div class="t">Captured</div><div class="d">Sensors log force, rotation, and location at 1000 Hz.</div></div>
+    <div class="step"><div class="num">02</div><div class="t">Scored</div><div class="d">On-board AI rates concussion risk instantly.</div></div>
+    <div class="step"><div class="num">03</div><div class="t">Uplinked</div><div class="d">Data streams to the cloud from the sideline.</div></div>
+    <div class="step"><div class="num">04</div><div class="t">Alerted</div><div class="d">Coaches notified before the next play.</div></div>
+  </div>
+</div></section>
+
+<!-- 5. INSIGHTS -->
+<section class="pad wrap"><div class="reveal">
+  <div class="eyebrow">Sideline-ready</div>
+  <h2 class="big" style="margin-top:16px">No jargon. <span class="it">Just answers.</span></h2>
+  <div class="cards">
+    <div class="ic"><div class="ico">%</div><div class="t">Probability score</div><div class="d">A 0–100% concussion-risk read on every significant hit.</div></div>
+    <div class="ic"><div class="ico">∿</div><div class="t">Visual impact graphs</div><div class="d">Force, rotation, and location at a glance.</div></div>
+    <div class="ic"><div class="ico">↗</div><div class="t">Real-time alerts</div><div class="d">A plain-language push to the staff's phones.</div></div>
+  </div>
+</div></section>
+
+<!-- 6. NUMBERS -->
+<div class="numband"><div class="numgrid wrap reveal" style="padding:0">
+  <div class="ncell"><div class="n">1000<span>Hz</span></div><div class="l">Sample rate</div></div>
+  <div class="ncell"><div class="n">&lt;50<span>ms</span></div><div class="l">Detection</div></div>
+  <div class="ncell"><div class="n">~95<span>g</span></div><div class="l">Concussion threshold</div></div>
+</div></div>
+
+<!-- 7. COMPARISON -->
+<section class="pad wrap"><div class="reveal">
+  <div class="eyebrow">Why old methods fail</div>
+  <h2 class="big" style="margin-top:16px">You can't catch <span class="it">what you can't measure.</span></h2>
+  <div class="vs">
+    <div class="vbox"><div class="m">SELF-REPORTING</div><div class="t">Players hide it</div><div class="d">Athletes stay in the game and under-report — especially kids.</div></div>
+    <div class="vbox"><div class="m">THE EYE TEST</div><div class="t">Symptoms lag</div><div class="d">By the time signs show, the damage is already done.</div></div>
+    <div class="vbox win"><div class="m">AXON AI</div><div class="t">Clinical-grade</div><div class="d">Automated, objective detection the moment risk crosses the line.</div></div>
+  </div>
+</div></section>
+
+<!-- 8. RESEARCH -->
+<section class="pad wrap"><div class="reveal research">
+  <div><div class="eyebrow">Peer-reviewed</div><div class="serif" style="font-size:22px;color:var(--dim);margin-top:14px">SIGML 2026<br>Vienna, Austria</div></div>
+  <div>
+    <div class="rt">A Smart Helmet System for Real-Time Concussion Detection in Football Players</div>
+    <div class="meta"><b>Published</b> in the conference journal &nbsp;·&nbsp; presented March 2026 &nbsp;·&nbsp; Certificate of Appreciation</div>
+  </div>
+</div></section>
+
+<!-- 9. CTA -->
+<section class="cta-final wrap" id="join"><div class="reveal">
+  <h2>Be first <span class="it">on the field.</span></h2>
+  <p>We're piloting with high-school football programs this season. Drop your email and we'll reach out.</p>
+  <div class="form"><input id="email" type="email" placeholder="you@email.com"/><button id="go">Join</button></div>
+  <div class="msg" id="msg"></div>
+</div></section>
+
+<footer><div class="in"><span>Axon AI © 2026 · Built by Hao Chang</span><a href="mailto:haochang164@gmail.com">haochang164@gmail.com</a></div></footer>
+
+<script>
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:0.12});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+const E=document.getElementById('email'),M=document.getElementById('msg');
+async function join(){const e=E.value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){M.style.color='#ff6a3a';M.textContent='Enter a valid email.';return;}
+  M.style.color='var(--dim)';M.textContent='Submitting…';
+  try{const r=await fetch('https://formsubmit.co/ajax/haochang164@gmail.com',{method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({email:e,_subject:'New Axon AI waitlist signup',_template:'table',_captcha:'false'})});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&String(d.success)==='true'){M.style.color='var(--acc)';M.textContent="You're on the list — we'll be in touch.";E.value='';}else throw 0;
+  }catch{location.href='mailto:haochang164@gmail.com?subject=Axon%20AI%20Waitlist&body='+encodeURIComponent('Add me: '+e);}}
+document.getElementById('go').onclick=join;E.addEventListener('keydown',e=>{if(e.key==='Enter')join();});
+</script>
+</body>
+</html>
