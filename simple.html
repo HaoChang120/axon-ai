@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AXON — Real-Time Concussion Detection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f5f4f0;--card:#fff;--ink:#16130f;--dim:#6c685f;--red:#d8313f;--line:#e6e3db}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:"Hanken Grotesk",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.5}
+  ::selection{background:var(--red);color:#fff}
+  a{color:inherit}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  nav{position:sticky;top:0;z-index:30;background:rgba(245,244,240,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  nav .in{max-width:1080px;margin:0 auto;padding:18px 28px;display:flex;justify-content:space-between;align-items:center}
+  .brand{font-weight:800;letter-spacing:-.01em;font-size:20px}
+  .brand b{color:var(--red)}
+  .btn{display:inline-block;background:var(--ink);color:#fff;text-decoration:none;font-weight:600;font-size:14px;
+    padding:11px 20px;border-radius:40px;transition:transform .2s,background .2s}
+  .btn:hover{transform:translateY(-1px);background:var(--red)}
+  .btn.red{background:var(--red)}.btn.red:hover{background:var(--ink)}
+
+  /* hero */
+  .hero{text-align:center;padding:64px 0 30px}
+  .kick{font-size:13px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--red);margin-bottom:22px}
+  h1{font-size:clamp(44px,8vw,92px);font-weight:800;line-height:.98;letter-spacing:-.035em}
+  .hero p{max-width:520px;margin:24px auto 0;font-size:clamp(16px,1.7vw,19px);color:var(--dim)}
+  .hero .cta{margin-top:32px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .helmet{display:block;margin:8px auto -2px;width:min(620px,92%);height:auto;
+    filter:drop-shadow(0 40px 50px rgba(40,20,20,.22))}
+
+  /* statement band */
+  .band{background:var(--ink);color:#f5f4f0;padding:clamp(70px,12vw,130px) 0}
+  .band h2{font-size:clamp(30px,5vw,58px);font-weight:700;line-height:1.05;letter-spacing:-.02em;max-width:18ch}
+  .band h2 b{color:var(--red)}
+
+  section.pad{padding:clamp(60px,10vw,110px) 0}
+  .eyebrow{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:34px}
+  h2.sec{font-size:clamp(28px,4.5vw,46px);font-weight:700;letter-spacing:-.02em;margin-bottom:40px;max-width:16ch}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;transition:transform .2s,box-shadow .2s}
+  .card:hover{transform:translateY(-4px);box-shadow:0 18px 40px -22px rgba(40,20,20,.3)}
+  .card .n{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--red);margin-bottom:14px}
+  .card .t{font-size:19px;font-weight:700;margin-bottom:8px}
+  .card .d{font-size:14px;color:var(--dim);line-height:1.5}
+
+  .nums{display:flex;gap:clamp(28px,6vw,72px);flex-wrap:wrap}
+  .num .n{font-size:clamp(44px,7vw,84px);font-weight:800;letter-spacing:-.03em;line-height:1}
+  .num .n span{font-size:.4em;color:var(--red)}
+  .num .l{margin-top:10px;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+
+  .paper{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:40px;max-width:620px}
+  .paper .v{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:16px}
+  .paper .rt{font-size:clamp(22px,3vw,30px);font-weight:700;line-height:1.2;letter-spacing:-.01em}
+  .paper .m{margin-top:22px;border-top:1px solid var(--line);padding-top:18px;font-size:14px;color:var(--dim);line-height:1.9}
+  .paper .m b{color:var(--ink);font-weight:600}
+
+  /* join */
+  #join{text-align:center}
+  #join h2{font-size:clamp(34px,6vw,68px);font-weight:800;letter-spacing:-.03em}
+  #join p{color:var(--dim);max-width:440px;margin:16px auto 30px}
+  .form{display:flex;max-width:460px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:40px;padding:6px;gap:6px}
+  .form input{flex:1;border:0;background:transparent;font-family:inherit;font-size:16px;padding:12px 18px;color:var(--ink)}
+  .form input:focus{outline:none}
+  .form button{border:0;background:var(--red);color:#fff;font-family:inherit;font-weight:700;font-size:15px;padding:0 26px;border-radius:34px;cursor:pointer;transition:background .2s}
+  .form button:hover{background:var(--ink)}
+  .msg{margin-top:16px;font-size:14px;color:var(--red);min-height:18px}
+  footer{border-top:1px solid var(--line);padding:28px 0;color:var(--dim);font-size:13px}
+  footer .in{max-width:1080px;margin:0 auto;padding:0 28px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  footer a{color:var(--ink);text-decoration:none;font-weight:600}
+
+  @media(max-width:760px){.grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:460px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav><div class="in"><div class="brand">AXON<b>.</b></div><a class="btn" href="#join">Join the waitlist</a></div></nav>
+
+<header class="hero wrap">
+  <div class="reveal">
+    <div class="kick">Smart Helmet System</div>
+    <h1>Know every hit.</h1>
+    <p>A smart football helmet that detects concussions in real time — scoring every impact and alerting coaches in milliseconds, before a second hit can land.</p>
+    <div class="cta"><a class="btn red" href="#join">Join the waitlist</a><a class="btn" href="#system" style="background:transparent;color:var(--ink);border:1px solid var(--line)">How it works</a></div>
+  </div>
+  <img class="helmet reveal" src="helmet.png" alt="Axon smart football helmet"/>
+</header>
+
+<div class="band"><div class="wrap reveal">
+  <h2>Most concussions go uncaught.<br><b>Axon doesn't miss one.</b></h2>
+</div></div>
+
+<section class="pad wrap" id="system"><div class="reveal">
+  <div class="eyebrow">How it works</div>
+  <div class="grid">
+    <div class="card"><div class="n">SENSE</div><div class="t">BNO085</div><div class="d">A 9-DOF sensor in the shell reads every impact — force and rotation.</div></div>
+    <div class="card"><div class="n">PROCESS</div><div class="t">Particle Boron</div><div class="d">Scores the hit on-board, the instant it happens.</div></div>
+    <div class="card"><div class="n">STREAM</div><div class="t">Firestore</div><div class="d">Impact data streams to the cloud in real time.</div></div>
+    <div class="card"><div class="n">ALERT</div><div class="t">Mobile app</div><div class="d">Coaches get alerted live; athletes review afterward.</div></div>
+  </div>
+</div></section>
+
+<section class="pad wrap"><div class="reveal">
+  <div class="eyebrow">Engineered to the millisecond</div>
+  <div class="nums">
+    <div class="num"><div class="n">1000<span>Hz</span></div><div class="l">Sample rate</div></div>
+    <div class="num"><div class="n">&lt;50<span>ms</span></div><div class="l">Detection</div></div>
+    <div class="num"><div class="n">~95<span>g</span></div><div class="l">Concussion threshold</div></div>
+  </div>
+</div></section>
+
+<section class="pad wrap"><div class="reveal">
+  <div class="eyebrow">Peer-reviewed</div>
+  <div class="paper">
+    <div class="v">SIGML 2026 · Vienna, Austria</div>
+    <div class="rt">A Smart Helmet System for Real-Time Concussion Detection in Football Players</div>
+    <div class="m"><b>Published</b> in the conference journal · presented March 2026 · Certificate of Appreciation</div>
+  </div>
+</div></section>
+
+<section class="pad wrap" id="join"><div class="reveal">
+  <h2>Be first on the field.</h2>
+  <p>We're piloting with high-school football programs this season. Drop your email and we'll reach out.</p>
+  <div class="form"><input id="email" type="email" placeholder="you@email.com"/><button id="go">Join</button></div>
+  <div class="msg" id="msg"></div>
+</div></section>
+
+<footer><div class="in"><span>AXON © 2026 · Built by Hao Chang</span><a href="mailto:haochang164@gmail.com">haochang164@gmail.com</a></div></footer>
+
+<script>
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:0.15});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+const E=document.getElementById('email'),M=document.getElementById('msg');
+async function join(){const e=E.value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){M.textContent='Enter a valid email.';return;}
+  M.style.color='var(--dim)';M.textContent='Submitting…';
+  try{const r=await fetch('https://formsubmit.co/ajax/haochang164@gmail.com',{method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({email:e,_subject:'New Axon waitlist signup',_template:'table',_captcha:'false'})});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&String(d.success)==='true'){M.style.color='var(--red)';M.textContent="You're on the list — we'll be in touch.";E.value='';}else throw 0;
+  }catch{location.href='mailto:haochang164@gmail.com?subject=Axon%20Waitlist&body='+encodeURIComponent('Add me: '+e);}}
+document.getElementById('go').onclick=join;E.addEventListener('keydown',e=>{if(e.key==='Enter')join();});
+</script>
+</body>
+</html>
