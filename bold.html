@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AXON AI — Know Every Hit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0b0b0c;--card:#141416;--ink:#f4f2ec;--dim:#8d8b85;--red:#ff2d40;--line:rgba(255,255,255,.1)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  ::selection{background:var(--red);color:#fff}
+  .anton{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.005em;font-weight:400}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 30px}
+  .reveal{opacity:0;transform:translateY(34px);transition:opacity .85s cubic-bezier(.2,.7,.2,1),transform .85s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:40;display:flex;justify-content:space-between;align-items:center;padding:18px 30px;background:linear-gradient(rgba(11,11,12,.9),transparent)}
+  .brand{font-family:"Anton";font-size:24px;letter-spacing:.04em}.brand b{color:var(--red)}
+  .btn{display:inline-block;background:var(--red);color:#fff;text-decoration:none;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.06em;padding:13px 24px;border:0;border-radius:2px;cursor:pointer;font-family:"Archivo";transition:transform .15s,background .2s}
+  .btn:hover{transform:translateY(-2px);background:#fff;color:#0b0b0c}
+  .btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}.btn.ghost:hover{background:#fff;color:#0b0b0c;border-color:#fff}
+
+  /* marquee */
+  .marq{position:fixed;top:64px;left:0;right:0;z-index:35;background:var(--red);overflow:hidden;white-space:nowrap;border-top:1px solid rgba(0,0,0,.2);border-bottom:1px solid rgba(0,0,0,.2)}
+  .marq .run{display:inline-block;animation:scroll 24s linear infinite;font-family:"Anton";font-size:14px;letter-spacing:.06em;color:#fff;padding:7px 0}
+  .marq .run span{margin:0 24px}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* hero */
+  .hero{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:140px 30px 40px;text-align:center;overflow:hidden}
+  .burst{position:absolute;top:54%;left:50%;width:min(120vh,1100px);aspect-ratio:1;transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(255,45,64,.28),rgba(255,45,64,.06) 38%,transparent 66%);z-index:0;filter:blur(10px)}
+  .hero-in{position:relative;z-index:2;max-width:1160px;margin:0 auto;width:100%}
+  .hero h1{font-size:clamp(64px,17vw,260px);line-height:.82;letter-spacing:-.01em}
+  .hero h1 .r{color:var(--red)}
+  .helmet{display:block;margin:-3vw auto -2vw;width:min(560px,86%);height:auto;filter:drop-shadow(0 30px 60px rgba(0,0,0,.6));position:relative;z-index:1}
+  .hero p{max-width:560px;margin:10px auto 0;font-size:clamp(15px,1.6vw,19px);color:#cfcdc7}
+  .hero .cta{margin-top:30px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .strip .s{padding:38px 24px;text-align:center;border-right:1px solid var(--line)}.strip .s:last-child{border-right:0}
+  .strip .n{font-family:"Anton";font-size:clamp(40px,7vw,84px);line-height:.9}.strip .n span{color:var(--red);font-size:.45em}
+  .strip .l{margin-top:8px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+
+  section.pad{padding:clamp(70px,11vw,130px) 0}
+  .eyebrow{font-family:"Anton";font-size:14px;letter-spacing:.16em;color:var(--red);margin-bottom:20px}
+  h2.sec{font-family:"Anton";font-size:clamp(40px,7vw,96px);line-height:.9;letter-spacing:-.005em}
+  h2.sec .o{color:transparent;-webkit-text-stroke:1.5px var(--ink)}
+  .lead{color:var(--dim);font-size:18px;max-width:60ch;margin-top:20px;line-height:1.6}
+
+  /* problem */
+  .prob{background:var(--red);color:#fff}
+  .prob .eyebrow{color:#1a0608}
+  .prob h2{font-family:"Anton";font-size:clamp(34px,6vw,72px);line-height:.95;max-width:18ch}
+  .prob p{max-width:60ch;margin-top:18px;font-size:17px;line-height:1.6;color:#ffe2e5}
+  .pstats{display:flex;gap:clamp(30px,7vw,80px);flex-wrap:wrap;margin-top:48px}
+  .pstats .n{font-family:"Anton";font-size:clamp(48px,8vw,96px);line-height:.85}
+  .pstats .l{margin-top:10px;font-size:14px;max-width:24ch;color:#ffe2e5}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:50px}
+  .grid.three{grid-template-columns:repeat(3,1fr)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:26px;transition:transform .18s,border-color .2s}
+  .card:hover{transform:translateY(-5px);border-color:var(--red)}
+  .card .n{font-family:"Anton";font-size:13px;letter-spacing:.1em;color:var(--red);margin-bottom:14px}
+  .card .t{font-size:20px;font-weight:800;margin-bottom:8px}
+  .card .d{font-size:14px;color:var(--dim);line-height:1.5}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+  .why .row{padding:20px 0;border-bottom:1px solid var(--line)}.why .row:first-child{border-top:1px solid var(--line)}
+  .why .t{font-weight:800;font-size:18px}.why .d{color:var(--dim);font-size:14px;margin-top:5px}
+
+  .paper{border:1px solid var(--line);border-left:4px solid var(--red);border-radius:4px;padding:38px;max-width:640px;margin-top:46px;background:var(--card)}
+  .paper .v{font-family:"Anton";font-size:13px;letter-spacing:.12em;color:var(--red);margin-bottom:16px}
+  .paper .rt{font-size:clamp(22px,3vw,30px);font-weight:800;line-height:1.18}
+  .paper .m{margin-top:20px;border-top:1px solid var(--line);padding-top:16px;font-size:14px;color:var(--dim);line-height:1.9}.paper .m b{color:var(--ink)}
+
+  #join{text-align:center}
+  #join h2{font-family:"Anton";font-size:clamp(48px,11vw,150px);line-height:.85}
+  #join p{color:var(--dim);max-width:460px;margin:18px auto 32px}
+  .form{display:flex;max-width:480px;margin:0 auto;border:1.5px solid var(--line);border-radius:2px;overflow:hidden}
+  .form input{flex:1;border:0;background:var(--card);font-family:inherit;font-size:16px;padding:16px 18px;color:var(--ink)}.form input:focus{outline:none}
+  .form button{border:0;background:var(--red);color:#fff;font-family:"Anton";font-size:16px;letter-spacing:.06em;padding:0 30px;cursor:pointer}.form button:hover{background:#fff;color:#0b0b0c}
+  .msg{margin-top:16px;font-size:14px;color:var(--red);min-height:18px}
+  footer{border-top:1px solid var(--line);padding:28px 0;color:var(--dim);font-size:13px}
+  footer .in{max-width:1160px;margin:0 auto;padding:0 30px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  footer a{color:var(--red);text-decoration:none;font-weight:700}
+  @media(max-width:820px){.strip{grid-template-columns:1fr}.strip .s{border-right:0;border-bottom:1px solid var(--line)}.grid,.grid.three{grid-template-columns:1fr 1fr}.split{grid-template-columns:1fr;gap:28px}}
+  @media(max-width:480px){.grid,.grid.three{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav><div class="brand">AXON<b>.</b></div><a class="btn" href="#join">Join the waitlist</a></nav>
+<div class="marq"><div class="run anton">
+  <span>KNOW EVERY HIT</span><span>★</span><span>STOP THE SECOND HIT</span><span>★</span><span>REAL-TIME CONCUSSION DETECTION</span><span>★</span><span>MAKE FOOTBALL SAFER FOR ALL</span><span>★</span>
+  <span>KNOW EVERY HIT</span><span>★</span><span>STOP THE SECOND HIT</span><span>★</span><span>REAL-TIME CONCUSSION DETECTION</span><span>★</span><span>MAKE FOOTBALL SAFER FOR ALL</span><span>★</span>
+</div></div>
+
+<header class="hero">
+  <div class="burst"></div>
+  <div class="hero-in">
+    <h1 class="anton reveal">KNOW EVERY <span class="r">HIT.</span></h1>
+    <img class="helmet reveal" src="helmet.png" alt="Axon AI smart football helmet"/>
+    <p class="reveal">A smart football helmet that pairs sensors with machine learning to detect concussions <b>as they happen</b> — and alert coaches before a second hit can land.</p>
+    <div class="cta reveal"><a class="btn" href="#join">Join the waitlist</a><a class="btn ghost" href="#system">How it works</a></div>
+  </div>
+</header>
+
+<div class="strip">
+  <div class="s"><div class="n anton" data-c="1000">0<span>Hz</span></div><div class="l">Sample rate</div></div>
+  <div class="s"><div class="n anton"><span>&lt;</span><span data-c="50">0</span><span>ms</span></div><div class="l">Detection</div></div>
+  <div class="s"><div class="n anton"><span>~</span><span data-c="95">0</span><span>g</span></div><div class="l">Concussion threshold</div></div>
+</div>
+
+<!-- PROBLEM -->
+<section class="prob pad"><div class="wrap reveal">
+  <div class="eyebrow">THE HIDDEN COST</div>
+  <h2 class="anton">Most concussions go undetected, misdiagnosed, or ignored.</h2>
+  <p>Head impacts in football slip past coaches and trainers, and the damage compounds — repeated undiagnosed hits are linked to CTE, memory loss, depression, and early-onset dementia. It starts long before the pros.</p>
+  <div class="pstats">
+    <div><div class="n anton">12.7%</div><div class="l">of athletes aged 8–14 didn't report a suspected concussion</div></div>
+    <div><div class="n anton">13.1%</div><div class="l">played through a head injury anyway</div></div>
+  </div>
+</div></section>
+
+<!-- SENSOR SUITE -->
+<section class="pad wrap" id="system"><div class="reveal">
+  <div class="eyebrow">360° SENSOR SUITE</div>
+  <h2 class="sec">A full array,<br><span class="o">built into the shell.</span></h2>
+  <p class="lead">Four pressure sensors map where every hit lands; a gyroscope and accelerometer capture how hard and how fast the head moved — all feeding the model in real time.</p>
+  <div class="grid">
+    <div class="card"><div class="n">SENSE</div><div class="t">4 pressure sensors</div><div class="d">Front, both sides, rear — pinpoints impact location.</div></div>
+    <div class="card"><div class="n">MEASURE</div><div class="t">Gyro + accelerometer</div><div class="d">Linear force and rotational motion — both drivers of injury.</div></div>
+    <div class="card"><div class="n">PROCESS</div><div class="t">On-board AI</div><div class="d">A Particle MCU scores every impact the instant it lands.</div></div>
+    <div class="card"><div class="n">ALERT</div><div class="t">Cloud + app</div><div class="d">Streams to the cloud; coaches get an instant phone alert.</div></div>
+  </div>
+</div></section>
+
+<!-- INSIGHTS -->
+<section class="pad wrap"><div class="reveal">
+  <div class="split">
+    <div>
+      <div class="eyebrow">SIDELINE-READY</div>
+      <h2 class="sec">No jargon.<br><span class="o">Just answers.</span></h2>
+      <p class="lead">Axon turns raw impact data into a concussion-probability score, visual graphs, and a plain-language alert — so coaches and medical staff act in seconds.</p>
+    </div>
+    <div class="why">
+      <div class="row"><div class="t">Concussion probability score</div><div class="d">A 0–100% risk read on every significant hit.</div></div>
+      <div class="row"><div class="t">Visual impact graphs</div><div class="d">Force, rotation, and location at a glance.</div></div>
+      <div class="row"><div class="t">Real-time mobile alerts</div><div class="d">The staff knows before the next snap.</div></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- WHY OLD METHODS FAIL -->
+<section class="pad wrap"><div class="reveal">
+  <div class="eyebrow">WHY OLD METHODS FAIL</div>
+  <h2 class="sec">You can't catch<br><span class="o">what you can't measure.</span></h2>
+  <div class="grid three">
+    <div class="card"><div class="n">SELF-REPORTING</div><div class="t">Players hide it</div><div class="d">Athletes stay in the game and under-report — especially kids.</div></div>
+    <div class="card"><div class="n">THE EYE TEST</div><div class="t">Symptoms lag</div><div class="d">By the time signs show, the damage is already done.</div></div>
+    <div class="card"><div class="n">AXON</div><div class="t">Clinical-grade</div><div class="d">Automated, objective detection the moment risk crosses the line.</div></div>
+  </div>
+</div></section>
+
+<!-- RESEARCH -->
+<section class="pad wrap"><div class="reveal">
+  <div class="eyebrow">PEER-REVIEWED</div>
+  <div class="paper">
+    <div class="v">SIGML 2026 · VIENNA, AUSTRIA</div>
+    <div class="rt">A Smart Helmet System for Real-Time Concussion Detection in Football Players</div>
+    <div class="m"><b>Published</b> in the conference journal · presented March 2026 · Certificate of Appreciation</div>
+  </div>
+</div></section>
+
+<!-- JOIN -->
+<section class="pad wrap" id="join"><div class="reveal">
+  <h2 class="anton">GET ON THE LIST</h2>
+  <p>We're piloting with high-school football programs this season. Drop your email and we'll reach out.</p>
+  <div class="form"><input id="email" type="email" placeholder="you@email.com"/><button id="go">JOIN</button></div>
+  <div class="msg" id="msg"></div>
+</div></section>
+
+<footer><div class="in"><span>AXON AI © 2026 · Built by Hao Chang</span><a href="mailto:haochang164@gmail.com">haochang164@gmail.com</a></div></footer>
+
+<script>
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');
+  e.target.querySelectorAll&&e.target.querySelectorAll('[data-c]').forEach(countUp);}}),{threshold:0.2});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+// count-up the stat strip
+const sObs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.querySelectorAll('[data-c]').forEach(countUp);sObs.unobserve(e.target);}}),{threshold:0.4});
+document.querySelectorAll('.strip').forEach(el=>sObs.observe(el));
+function countUp(el){const target=+el.dataset.c;let v=0;const step=Math.max(1,Math.ceil(target/40));
+  const t=setInterval(()=>{v+=step;if(v>=target){v=target;clearInterval(t);}el.textContent=v;},22);}
+
+const E=document.getElementById('email'),M=document.getElementById('msg');
+async function join(){const e=E.value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){M.textContent='Enter a valid email.';return;}
+  M.style.color='var(--dim)';M.textContent='Submitting…';
+  try{const r=await fetch('https://formsubmit.co/ajax/haochang164@gmail.com',{method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({email:e,_subject:'New Axon AI waitlist signup',_template:'table',_captcha:'false'})});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&String(d.success)==='true'){M.style.color='var(--red)';M.textContent="YOU'RE ON THE LIST.";E.value='';}else throw 0;
+  }catch{location.href='mailto:haochang164@gmail.com?subject=Axon%20AI%20Waitlist&body='+encodeURIComponent('Add me: '+e);}}
+document.getElementById('go').onclick=join;E.addEventListener('keydown',e=>{if(e.key==='Enter')join();});
+</script>
+</body>
+</html>
