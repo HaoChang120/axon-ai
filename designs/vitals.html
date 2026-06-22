@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Axon — Vitals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Hanken+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f2ede2;--paper:#fbf8f1;--ink:#191512;--teal:#0e5e54;--rust:#a4441f;--dim:#7a7468;--line:#d8d0c0}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:"Hanken Grotesk",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+  ::selection{background:var(--teal);color:var(--paper)}
+  .serif{font-family:"Fraunces",serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 40px}
+  .rise{opacity:0;transform:translateY(20px);animation:rise 1s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  nav{display:flex;justify-content:space-between;align-items:center;padding:30px 40px;max-width:1180px;margin:0 auto}
+  .brand{font-family:"Fraunces";font-weight:600;font-size:22px;letter-spacing:-.01em}
+  .brand i{color:var(--teal)}
+  .nav-r{display:flex;gap:34px;align-items:center;font-size:14px}
+  .nav-r a{color:var(--ink);text-decoration:none;opacity:.7;transition:opacity .2s}
+  .nav-r a:hover{opacity:1}
+  .pill{border:1px solid var(--ink);border-radius:30px;padding:9px 20px!important;opacity:1!important;transition:.25s}
+  .pill:hover{background:var(--ink);color:var(--paper)}
+
+  .hero{padding:70px 0 60px}
+  .eyebrow{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin-bottom:28px}
+  .hero h1{font-family:"Fraunces";font-weight:340;font-size:clamp(46px,8vw,108px);line-height:1.02;letter-spacing:-.02em;max-width:14ch}
+  .hero h1 em{font-style:italic;color:var(--teal)}
+  .hero .sub{margin-top:30px;max-width:560px;font-size:19px;color:#3a342c;line-height:1.55;font-weight:400}
+  .rule{height:1px;background:var(--line);margin:56px 0}
+
+  .figrow{display:grid;grid-template-columns:repeat(3,1fr);gap:40px}
+  .fig .n{font-family:"Fraunces";font-size:clamp(40px,5vw,64px);font-weight:400;line-height:1}
+  .fig .n sup{font-size:.4em;color:var(--teal);font-weight:500}
+  .fig .l{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:12px}
+
+  .lead{font-family:"Fraunces";font-weight:330;font-size:clamp(24px,3.4vw,38px);line-height:1.32;max-width:20ch;letter-spacing:-.01em}
+  .lead em{font-style:italic;color:var(--rust)}
+  .editorial{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start;padding:30px 0 10px}
+  .editorial p{font-size:17px;color:#3a342c;line-height:1.7;margin-bottom:18px}
+  .editorial p b{color:var(--ink);font-weight:600}
+
+  .sec-label{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:30px;display:flex;gap:14px;align-items:center}
+  .sec-label::before{content:"";width:26px;height:1px;background:var(--teal)}
+  .speclist{border-top:1px solid var(--line)}
+  .spec{display:grid;grid-template-columns:60px 1fr 1.4fr;gap:30px;padding:26px 0;border-bottom:1px solid var(--line);align-items:baseline;transition:padding-left .3s}
+  .spec:hover{padding-left:12px}
+  .spec .i{font-family:"Fraunces";color:var(--teal);font-size:18px}
+  .spec .t{font-family:"Fraunces";font-size:24px;font-weight:400}
+  .spec .d{color:var(--dim);font-size:15px;line-height:1.55}
+
+  .paper{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:48px;margin-top:8px}
+  .paper .v{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--rust);margin-bottom:18px}
+  .paper .rt{font-family:"Fraunces";font-weight:380;font-size:clamp(24px,3.2vw,34px);line-height:1.2;max-width:24ch}
+  .paper .m{margin-top:26px;border-top:1px solid var(--line);padding-top:20px;font-size:14px;line-height:2;color:var(--dim)}
+  .paper .m b{color:var(--ink);font-weight:600}
+
+  .join{padding:90px 0 70px;text-align:center}
+  .join h2{font-family:"Fraunces";font-weight:340;font-size:clamp(36px,6vw,76px);line-height:1.05;letter-spacing:-.02em}
+  .join h2 em{font-style:italic;color:var(--teal)}
+  .join p{color:var(--dim);margin:18px auto 36px;max-width:440px;font-size:16px}
+  .form{display:flex;max-width:460px;margin:0 auto;border-bottom:1.5px solid var(--ink);gap:0}
+  .form input{flex:1;background:transparent;border:0;font-family:inherit;font-size:18px;padding:14px 4px;color:var(--ink)}
+  .form input:focus{outline:none}
+  .form button{background:transparent;border:0;font-family:"Fraunces";font-size:18px;color:var(--teal);cursor:pointer;padding:0 8px;font-style:italic}
+  .form button:hover{color:var(--ink)}
+  .msg{font-size:14px;color:var(--teal);margin-top:16px;min-height:18px}
+  footer{border-top:1px solid var(--line);padding:30px 0;display:flex;justify-content:space-between;color:var(--dim);font-size:13px;flex-wrap:wrap;gap:10px}
+  footer a{color:var(--teal);text-decoration:none}
+  @media(max-width:760px){.figrow,.editorial,.spec{grid-template-columns:1fr;gap:18px}.spec{gap:8px}.nav-r a:not(.pill){display:none}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="brand">Axon<i>.</i></div>
+  <div class="nav-r"><a href="#system">System</a><a href="#research">Research</a><a href="#join" class="pill">Join the waitlist</a></div>
+</nav>
+
+<header class="wrap hero">
+  <div class="eyebrow rise">Smart helmet system — IoT &amp; machine learning</div>
+  <h1 class="rise" style="animation-delay:.08s">Real-time <em>concussion</em> detection.</h1>
+  <p class="sub rise" style="animation-delay:.18s">A smart football helmet that catches dangerous head impacts the instant they happen — sensing the hit, scoring its force, and alerting coaches in milliseconds, before a second impact can land.</p>
+  <div class="rule rise" style="animation-delay:.26s"></div>
+  <div class="figrow rise" style="animation-delay:.32s">
+    <div class="fig"><div class="n serif">1000<sup>Hz</sup></div><div class="l">Sample rate</div></div>
+    <div class="fig"><div class="n serif">&lt;50<sup>ms</sup></div><div class="l">Detection latency</div></div>
+    <div class="fig"><div class="n serif">~95<sup>g</sup></div><div class="l">Concussive threshold</div></div>
+  </div>
+</header>
+
+<section class="wrap editorial">
+  <div class="lead serif">From <em>guesswork</em> on the sideline to a measurement at the point of impact.</div>
+  <div>
+    <p>Today, concussion calls rely on a kid reporting that something feels wrong — or a coach noticing symptoms after the damage is done. Axon closes that gap.</p>
+    <p>Built by a founder who sustained <b>two Grade 2 concussions</b> across a varsity football career, the system turns every head impact into data: force, rotation, and risk — recorded the instant it occurs. The mission is simple. <b>Make football safer for all.</b></p>
+  </div>
+</section>
+
+<section class="wrap" id="system" style="padding:50px 0">
+  <div class="sec-label">The architecture</div>
+  <div class="speclist">
+    <div class="spec"><div class="i serif">01</div><div class="t serif">Adafruit BNO085</div><div class="d">A 9-DOF inertial measurement unit seated in the shell, detecting sudden acceleration and rotational change.</div></div>
+    <div class="spec"><div class="i serif">02</div><div class="t serif">Particle Boron</div><div class="d">An onboard microcontroller that reads and scores the sensor data at the edge of every hit.</div></div>
+    <div class="spec"><div class="i serif">03</div><div class="t serif">Firebase Firestore</div><div class="d">A NoSQL cloud database ingesting flexible impact records in real time.</div></div>
+    <div class="spec"><div class="i serif">04</div><div class="t serif">FlutterFlow App</div><div class="d">Coaches monitor player status live; athletes review their own post-activity statistics.</div></div>
+  </div>
+</section>
+
+<section class="wrap" id="research" style="padding:30px 0 60px">
+  <div class="sec-label">Peer-reviewed</div>
+  <div class="paper">
+    <div class="v">SIGML 2026 — Vienna, Austria</div>
+    <div class="rt serif">A Smart Helmet System for Real-Time Concussion Detection in Football Players</div>
+    <div class="m"><b>Venue</b> &nbsp;7th International Conference on Signal Processing &amp; Machine Learning<br>
+      <b>Date</b> &nbsp;&nbsp;&nbsp;March 14–15, 2026 · Vienna<br>
+      <b>Status</b> &nbsp;Published in conference journal · Certificate of Appreciation</div>
+  </div>
+</section>
+
+<section class="wrap join" id="join">
+  <h2 class="serif">Be first to <em>pilot</em> Axon.</h2>
+  <p>We're piloting with high-school football programs this season. Leave your email and we'll reach out.</p>
+  <div class="form"><input id="email" type="email" placeholder="you@email.com"/><button id="go" class="serif">Join →</button></div>
+  <div class="msg" id="msg"></div>
+</section>
+
+<div class="wrap"><footer>
+  <span>Axon © 2026 — Project lead, Hao Chang</span>
+  <a href="mailto:haochang164@gmail.com">haochang164@gmail.com</a>
+</footer></div>
+
+<script>
+const E=document.getElementById('email'),M=document.getElementById('msg');
+async function join(){const e=E.value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){M.style.color='#a4441f';M.textContent='Please enter a valid email.';return;}
+  M.style.color='var(--teal)';M.textContent='Submitting…';
+  try{const r=await fetch('https://formsubmit.co/ajax/haochang164@gmail.com',{method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({email:e,_subject:'New Axon waitlist signup',_template:'table',_captcha:'false'})});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&String(d.success)==='true'){M.textContent="You're on the list — we'll be in touch.";E.value='';}else throw 0;
+  }catch{location.href='mailto:haochang164@gmail.com?subject=Axon%20Waitlist&body='+encodeURIComponent('Add me: '+e);}}
+document.getElementById('go').onclick=join;
+E.addEventListener('keydown',e=>{if(e.key==='Enter')join();});
+</script>
+</body>
+</html>

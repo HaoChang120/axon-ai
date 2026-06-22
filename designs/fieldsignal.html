@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AXON — Field Signal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#070708;--ink:#f3f1ea;--amber:#ffb000;--red:#ff3b30;--green:#46e08a;--dim:#76746c;--line:#1c1c1e}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:"JetBrains Mono",monospace;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  ::selection{background:var(--amber);color:#000}
+  .br{font-family:"Bricolage Grotesque",sans-serif}
+  .grain{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.06;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .scan{position:fixed;inset:0;z-index:59;pointer-events:none;opacity:.4;
+    background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.25) 3px)}
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:40;display:flex;justify-content:space-between;align-items:center;
+    padding:20px 32px;font-size:12px;letter-spacing:.12em;mix-blend-mode:difference}
+  nav .b{font-family:"Bricolage Grotesque";font-weight:800;font-size:18px;letter-spacing:0}
+  nav a{color:var(--ink);text-decoration:none;opacity:.75}nav a:hover{opacity:1}
+
+  /* hero */
+  .hero{height:100vh;min-height:640px;position:relative;display:flex;flex-direction:column;justify-content:center;padding:0 32px}
+  #wave{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+  .hero-in{position:relative;z-index:2;max-width:1100px;margin:0 auto;width:100%}
+  .stat-line{font-size:12px;letter-spacing:.2em;color:var(--amber);margin-bottom:24px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);animation:bl 1.4s infinite}
+  @keyframes bl{50%{opacity:.3}}
+  .hero h1{font-family:"Bricolage Grotesque";font-weight:800;font-size:clamp(48px,11vw,164px);line-height:.9;letter-spacing:-.03em}
+  .hero h1 .am{color:var(--amber)}
+  .hero .sub{margin-top:26px;max-width:540px;font-size:15px;line-height:1.6;color:#c7c5bd}
+  .hero .readout{margin-top:30px;font-size:13px;letter-spacing:.06em;color:var(--dim);border-left:2px solid var(--amber);padding-left:14px}
+  .hero .readout b{color:var(--ink)}
+  .hero .readout.alert{color:var(--red)}.hero .readout.alert b{color:var(--red)}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:0 32px}
+  .band{border-top:1px solid var(--line);padding:80px 0}
+  .lbl{font-size:12px;letter-spacing:.2em;color:var(--amber);margin-bottom:32px}
+  .band h2{font-family:"Bricolage Grotesque";font-weight:600;font-size:clamp(28px,4.5vw,52px);line-height:1.04;letter-spacing:-.02em;margin-bottom:40px;max-width:18ch}
+
+  .sys{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+  .cell{background:var(--bg);padding:30px;transition:background .25s}
+  .cell:hover{background:#0e0e0f}
+  .cell .k{font-size:11px;letter-spacing:.16em;color:var(--amber)}
+  .cell .t{font-family:"Bricolage Grotesque";font-weight:600;font-size:24px;margin:12px 0 10px}
+  .cell .d{font-size:14px;color:var(--dim);line-height:1.6}
+
+  .pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+  .ps{border-top:2px solid var(--amber);padding-top:18px}
+  .ps .n{font-family:"Bricolage Grotesque";font-weight:800;color:var(--amber);font-size:15px}
+  .ps .t{font-family:"Bricolage Grotesque";font-weight:600;font-size:18px;margin:10px 0 8px}
+  .ps .d{font-size:13px;color:var(--dim);line-height:1.55}
+
+  .paper{border:1px solid var(--amber);padding:36px;background:#0c0b08}
+  .paper .v{color:var(--amber);font-size:12px;letter-spacing:.14em;margin-bottom:16px}
+  .paper .rt{font-family:"Bricolage Grotesque";font-weight:600;font-size:clamp(22px,3.4vw,34px);line-height:1.15;max-width:24ch}
+  .paper .m{margin-top:22px;border-top:1px solid var(--line);padding-top:18px;font-size:13px;line-height:2;color:var(--dim)}
+  .paper .m b{color:var(--ink)}
+
+  .join{text-align:center;padding:110px 0}
+  .join h2{font-family:"Bricolage Grotesque";font-weight:800;font-size:clamp(40px,9vw,120px);line-height:.88;letter-spacing:-.03em;margin-bottom:34px}
+  .join h2 .am{color:var(--amber)}
+  .form{display:flex;max-width:480px;margin:0 auto;border:1px solid var(--ink)}
+  .form input{flex:1;background:transparent;border:0;color:var(--ink);font-family:inherit;font-size:15px;padding:18px}
+  .form input:focus{outline:none}
+  .form button{background:var(--amber);color:#000;border:0;font-family:"Bricolage Grotesque";font-weight:800;padding:0 28px;cursor:pointer}
+  .form button:hover{background:var(--ink)}
+  .msg{font-size:13px;color:var(--amber);margin-top:16px;min-height:18px;letter-spacing:.05em}
+  footer{border-top:1px solid var(--line);padding:28px 32px;display:flex;justify-content:space-between;color:var(--dim);font-size:12px;flex-wrap:wrap;gap:10px}
+  footer a{color:var(--amber);text-decoration:none}
+  @media(max-width:760px){.sys,.pipe{grid-template-columns:1fr}.pipe{gap:30px}}
+</style>
+</head>
+<body>
+<div class="grain"></div><div class="scan"></div>
+
+<nav><div class="b">AXON</div><div><a href="#sys">SYSTEM</a> &nbsp; <a href="#join">JOIN</a></div></nav>
+
+<section class="hero">
+  <canvas id="wave"></canvas>
+  <div class="hero-in">
+    <div class="stat-line"><span class="dot"></span>SENSOR ARRAY — ARMED &nbsp;·&nbsp; 1000 Hz &nbsp;·&nbsp; ORANGE COUNTY</div>
+    <h1 class="br">Every hit,<br>on the <span class="am">record.</span></h1>
+    <p class="sub">Real-time concussion detection in a smart football helmet. Axon scores the force of every impact and alerts coaches in milliseconds — before a second hit can land.</p>
+    <div class="readout" id="readout"><b>LINEAR</b> 14 g &nbsp; <b>ANGULAR</b> 820 rad/s² &nbsp; <b>STATUS</b> nominal</div>
+  </div>
+</section>
+
+<section class="wrap band" id="sys">
+  <div class="lbl">01 — THE HARDWARE</div>
+  <h2 class="br">A nervous system built into the shell.</h2>
+  <div class="sys">
+    <div class="cell"><div class="k">SENSE</div><div class="t br">Adafruit BNO085</div><div class="d">9-DOF IMU detecting sudden acceleration and rotational change.</div></div>
+    <div class="cell"><div class="k">PROCESS</div><div class="t br">Particle Boron</div><div class="d">Onboard MCU reading and scoring impacts at the edge.</div></div>
+    <div class="cell"><div class="k">STREAM</div><div class="t br">Firebase Firestore</div><div class="d">NoSQL cloud ingesting impact records in real time.</div></div>
+    <div class="cell"><div class="k">ALERT</div><div class="t br">FlutterFlow App</div><div class="d">Coaches monitor live; athletes review post-activity.</div></div>
+  </div>
+</section>
+
+<section class="wrap band">
+  <div class="lbl">02 — IMPACT → ALERT</div>
+  <div class="pipe">
+    <div class="ps"><div class="n">01</div><div class="t br">Captured</div><div class="d">BNO085 logs linear (~95 g) and angular (~6000 rad/s²) force.</div></div>
+    <div class="ps"><div class="n">02</div><div class="t br">Uplinked</div><div class="d">Boron streams readings to Firestore from the sideline.</div></div>
+    <div class="ps"><div class="n">03</div><div class="t br">Evaluated</div><div class="d">Detection flags concussion-risk thresholds instantly.</div></div>
+    <div class="ps"><div class="n">04</div><div class="t br">Notified</div><div class="d">Coaches alerted before a second impact can occur.</div></div>
+  </div>
+</section>
+
+<section class="wrap band">
+  <div class="lbl">03 — PEER-REVIEWED</div>
+  <div class="paper">
+    <div class="v">SIGML 2026 // VIENNA, AUSTRIA</div>
+    <div class="rt br">A Smart Helmet System for Real-Time Concussion Detection in Football Players</div>
+    <div class="m"><b>VENUE</b> &nbsp;7th Intl. Conference on Signal Processing &amp; Machine Learning<br>
+      <b>DATE</b> &nbsp;&nbsp;March 14–15, 2026 · Vienna<br>
+      <b>STATUS</b> &nbsp;Published · Certificate of Appreciation</div>
+  </div>
+</section>
+
+<section class="wrap join" id="join">
+  <div class="lbl" style="text-align:center">04 — DEPLOYMENT</div>
+  <h2 class="br">Get on the <span class="am">list.</span></h2>
+  <div class="form"><input id="email" type="email" placeholder="you@email.com"/><button id="go">JOIN</button></div>
+  <div class="msg" id="msg"></div>
+</section>
+
+<footer><span>AXON © 2026 — BUILT BY HAO CHANG · MAKE FOOTBALL SAFER FOR ALL</span><a href="mailto:haochang164@gmail.com">haochang164@gmail.com</a></footer>
+
+<script>
+// --- live oscilloscope: scrolling waveform that spikes into "impact" ---
+const cv=document.getElementById('wave'),cx=cv.getContext('2d'),ro=document.getElementById('readout');
+let W,H,dpr=Math.min(devicePixelRatio,2);
+function size(){W=cv.width=innerWidth*dpr;H=cv.height=cv.clientHeight*dpr;}
+addEventListener('resize',size);size();
+const N=320,buf=new Array(N).fill(0);
+let frame=0,spike=0,alertT=0;
+function step(){
+  frame++;
+  // baseline noise + occasional concussive spike
+  let v=(Math.random()-.5)*0.10;
+  if(spike>0){ v += Math.sin((1-spike/14)*Math.PI)*1.5*(Math.random()*.4+.8); spike--; if(spike===0) alertT=120; }
+  if(spike<=0 && Math.random()<0.006){ spike=14; }
+  buf.push(v); buf.shift();
+  if(alertT>0) alertT--;
+  // readout text
+  if(alertT>90){ ro.className='readout alert';
+    ro.innerHTML='<b>LINEAR</b> '+(78+Math.floor(Math.random()*24))+' g &nbsp; <b>ANGULAR</b> '+(4800+Math.floor(Math.random()*2000))+' rad/s² &nbsp; <b>STATUS</b> CONCUSSION RISK';
+  } else if(frame%30===0){ ro.className='readout';
+    ro.innerHTML='<b>LINEAR</b> '+(10+Math.floor(Math.random()*14))+' g &nbsp; <b>ANGULAR</b> '+(400+Math.floor(Math.random()*900))+' rad/s² &nbsp; <b>STATUS</b> nominal'; }
+  // draw
+  cx.clearRect(0,0,W,H);
+  const mid=H*0.5, amp=H*0.32;
+  cx.lineWidth=2*dpr;
+  cx.strokeStyle = alertT>0 ? '#ff3b30' : '#ffb000';
+  cx.shadowBlur=14*dpr; cx.shadowColor=cx.strokeStyle;
+  cx.beginPath();
+  for(let i=0;i<N;i++){ const x=i/(N-1)*W, y=mid-buf[i]*amp; i?cx.lineTo(x,y):cx.moveTo(x,y); }
+  cx.stroke();
+  // faint center grid line
+  cx.shadowBlur=0;cx.strokeStyle='rgba(255,255,255,.05)';cx.lineWidth=1*dpr;
+  cx.beginPath();cx.moveTo(0,mid);cx.lineTo(W,mid);cx.stroke();
+  requestAnimationFrame(step);
+}
+step();
+
+// --- waitlist ---
+const E=document.getElementById('email'),M=document.getElementById('msg');
+async function join(){const e=E.value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){M.style.color='#ff3b30';M.textContent='Enter a valid email.';return;}
+  M.style.color='var(--amber)';M.textContent='Submitting…';
+  try{const r=await fetch('https://formsubmit.co/ajax/haochang164@gmail.com',{method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({email:e,_subject:'New Axon waitlist signup',_template:'table',_captcha:'false'})});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&String(d.success)==='true'){M.textContent='● SIGNAL RECEIVED — YOU’RE ON THE LIST.';E.value='';}else throw 0;
+  }catch{location.href='mailto:haochang164@gmail.com?subject=Axon%20Waitlist&body='+encodeURIComponent('Add me: '+e);}}
+document.getElementById('go').onclick=join;
+E.addEventListener('keydown',e=>{if(e.key==='Enter')join();});
+</script>
+</body>
+</html>

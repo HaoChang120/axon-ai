@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AXON AI — Safety Orange (v8)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0c0703; --bg2:#140b05;
+    --cyan:#ff8c42; --blue:#ff8c42; --amber:#ffb347; --red:#ff4d5e;
+    --ink:#e8f4ff; --dim:#6f8197;
+    --line:rgba(255,140,66,.14);
+    --glass:rgba(8,14,22,.6);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;
+    overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--cyan);color:#0c0703}
+
+  /* ---------- scene + overlays ---------- */
+  #scene{position:fixed;inset:0;z-index:0;opacity:.8}
+  .vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse 95% 75% at 50% 42%,transparent 38%,rgba(2,4,8,.9) 100%)}
+  .scanlines{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.3;
+    background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(0,0,0,.16) 3px)}
+  .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.045;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .topfade{position:fixed;top:0;left:0;right:0;height:130px;z-index:2;pointer-events:none;
+    background:linear-gradient(rgba(4,6,10,.85),transparent)}
+
+  /* ---------- frame ---------- */
+  .frame{position:fixed;inset:0;z-index:5;pointer-events:none}
+  .frame .corner{position:absolute;width:32px;height:32px;border:1px solid var(--cyan);opacity:.45}
+  .frame .tl{top:20px;left:20px;border-right:0;border-bottom:0}
+  .frame .tr{top:20px;right:20px;border-left:0;border-bottom:0}
+  .frame .bl{bottom:20px;left:20px;border-right:0;border-top:0}
+  .frame .br{bottom:20px;right:20px;border-left:0;border-top:0}
+
+  /* ---------- nav ---------- */
+  nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;
+    align-items:center;padding:24px 52px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:600;letter-spacing:.28em;font-size:15px}
+  .brand .dot{width:8px;height:8px;background:var(--cyan);border-radius:50%;
+    box-shadow:0 0 12px var(--cyan);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.65)}}
+  .nav-links{display:flex;gap:32px;font-family:"Space Mono",monospace;font-size:11px;
+    letter-spacing:.2em}
+  .nav-links a{color:var(--ink);text-decoration:none;opacity:.6;transition:opacity .3s}
+  .nav-links a:hover{opacity:1}
+
+  /* ---------- telemetry (docked bottom-left) ---------- */
+  .telemetry{position:fixed;left:32px;bottom:32px;z-index:15;width:236px;pointer-events:none;
+    font-family:"Space Mono",monospace;background:var(--glass);border:1px solid var(--line);
+    backdrop-filter:blur(10px);padding:15px 16px 13px;opacity:0;transform:translateY(12px);
+    transition:opacity .7s,transform .7s}
+  .telemetry.show{opacity:1;transform:none}
+  .telemetry h4{font-size:9px;letter-spacing:.3em;color:var(--cyan);margin-bottom:13px;
+    display:flex;justify-content:space-between;align-items:center}
+  .telemetry h4 span{color:var(--dim)}
+  .trow{display:flex;justify-content:space-between;font-size:11px;margin:8px 0 3px;color:var(--dim)}
+  .trow b{color:var(--ink);font-weight:400}
+  .tbar{height:3px;background:rgba(255,255,255,.06);margin-bottom:9px;position:relative;overflow:hidden}
+  .tbar i{position:absolute;inset:0 auto 0 0;background:var(--cyan);box-shadow:0 0 8px var(--cyan);
+    width:30%;transition:width .25s,background .25s}
+  .status-ok{color:var(--cyan)!important}.status-alert{color:var(--red)!important}
+  .tmodel{margin-top:11px;padding-top:11px;border-top:1px solid var(--line);font-size:10px;
+    letter-spacing:.2em;color:var(--dim);display:flex;justify-content:space-between}
+  .tmodel b{color:var(--cyan);font-weight:400}
+
+  /* ---------- model switcher (bottom-center) ---------- */
+  .switcher{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);z-index:18;
+    display:flex;gap:4px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(10px);
+    padding:5px;font-family:"Space Mono",monospace}
+  .switcher button{background:transparent;border:0;color:var(--dim);font-family:inherit;font-size:10px;
+    letter-spacing:.22em;padding:10px 18px;cursor:pointer;transition:color .25s,background .25s;position:relative}
+  .switcher button:hover{color:var(--ink)}
+  .switcher button.active{color:var(--bg);background:var(--cyan)}
+
+  /* ---------- content ---------- */
+  main{position:relative;z-index:10}
+  section{min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+    padding:0 52px;position:relative}
+  .kicker{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.4em;
+    color:var(--cyan);margin-bottom:22px;display:flex;align-items:center;gap:14px}
+  .kicker::before{content:"";width:42px;height:1px;background:var(--cyan)}
+
+  .block{max-width:560px;position:relative;background:rgba(5,9,15,.62);backdrop-filter:blur(8px);
+    padding:32px 36px;border:1px solid rgba(255,140,66,.1)}
+  #hero .block{background:transparent;backdrop-filter:none;border:0;padding:0;max-width:720px}
+  section.right{align-items:flex-end;text-align:left}
+  section.right .block{text-align:left}
+  section.center{align-items:center;text-align:center}
+  section.center .kicker{justify-content:center}
+  h2{font-size:clamp(34px,5vw,62px);line-height:1.02;font-weight:600;letter-spacing:-.02em;
+    margin-bottom:24px;text-shadow:0 2px 34px rgba(4,6,10,.95),0 0 60px rgba(4,6,10,.7)}
+  h2 em{font-style:normal;color:transparent;-webkit-text-stroke:1.2px var(--cyan)}
+  .body{font-size:18px;line-height:1.75;color:#cfdae7;font-weight:400}
+  .body b{color:#fff;font-weight:600}
+  .reveal{opacity:0;transform:translateY(36px);transition:opacity .95s cubic-bezier(.2,.7,.2,1),transform .95s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* hero */
+  #hero{justify-content:center;align-items:flex-start}
+  .hero-title{font-size:clamp(54px,9.5vw,148px);line-height:.9;font-weight:700;letter-spacing:-.03em;
+    margin:0;text-shadow:0 0 40px rgba(255,140,66,.28),0 6px 44px rgba(4,6,10,.9)}
+  .hero-title em{font-style:normal;color:transparent;-webkit-text-stroke:1.4px var(--cyan)}
+  .hero-title .l2{color:transparent;-webkit-text-stroke:1.4px var(--cyan);display:block}
+  .hero-benefit{margin-top:16px;font-size:clamp(22px,3.2vw,42px);font-weight:600;color:var(--cyan);
+    letter-spacing:-.01em;line-height:1.05;text-shadow:0 2px 22px rgba(4,6,10,.85)}
+  .hero-sub{max-width:620px;margin-top:30px;font-size:clamp(17px,1.8vw,22px);line-height:1.62;
+    color:#d8e3ef;font-weight:400;text-shadow:0 2px 18px rgba(4,6,10,.85)}
+  .hero-sub b{color:#fff;font-weight:600}
+
+  /* CTA buttons */
+  .hero-cta{display:flex;gap:14px;margin-top:36px;flex-wrap:wrap}
+  .cta-primary{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.18em;background:var(--cyan);
+    color:var(--bg);border:0;padding:16px 30px;cursor:pointer;transition:.25s;text-decoration:none;display:inline-block;font-weight:500}
+  .cta-primary:hover{box-shadow:0 0 38px rgba(255,140,66,.6);transform:translateY(-2px)}
+  .cta-secondary{font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.18em;background:rgba(4,6,10,.5);
+    color:var(--ink);border:1px solid var(--line);padding:16px 28px;cursor:pointer;transition:.25s;text-decoration:none;display:inline-block}
+  .cta-secondary:hover{border-color:var(--cyan);color:var(--cyan)}
+  .wl-count{margin-top:16px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.16em;color:var(--cyan);opacity:.85;min-height:14px}
+
+  /* waitlist modal */
+  .modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+    background:rgba(2,4,8,.8);backdrop-filter:blur(7px);padding:22px}
+  .modal.open{display:flex}
+  .modal-card{width:100%;max-width:420px;border:1px solid var(--line);background:#070d15;padding:36px;position:relative;
+    box-shadow:0 0 80px rgba(255,140,66,.12)}
+  .modal-card h3{font-size:25px;font-weight:600;margin-bottom:8px}
+  .modal-card p{color:var(--dim);font-size:14px;line-height:1.55;margin-bottom:22px}
+  .modal-card input{width:100%;background:#04080e;border:1px solid var(--line);color:var(--ink);padding:14px;
+    font-family:inherit;font-size:15px;margin-bottom:14px}
+  .modal-card input:focus{outline:none;border-color:var(--cyan)}
+  .modal-close{position:absolute;top:14px;right:18px;background:0;border:0;color:var(--dim);font-size:24px;cursor:pointer;line-height:1}
+  .modal-msg{font-family:"Space Mono",monospace;font-size:12px;margin-top:8px;min-height:16px;letter-spacing:.04em}
+  .modal-msg.ok{color:var(--cyan)}.modal-msg.bad{color:var(--red)}
+
+  /* mobile nav board */
+  .hamburger{display:none;flex-direction:column;gap:5px;background:0;border:0;cursor:pointer;padding:8px}
+  .hamburger span{width:26px;height:2px;background:var(--ink);transition:.25s;transform-origin:center}
+  .hamburger.on span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .hamburger.on span:nth-child(2){opacity:0}
+  .hamburger.on span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  .mobile-board{position:fixed;inset:0;z-index:25;background:rgba(4,6,10,.97);backdrop-filter:blur(10px);
+    display:none;flex-direction:column;justify-content:center;align-items:center;gap:6px}
+  .mobile-board.open{display:flex}
+  .mobile-board a{color:var(--ink);text-decoration:none;font-family:"Space Mono",monospace;font-size:15px;
+    letter-spacing:.22em;padding:14px}
+  .mobile-board a:hover{color:var(--cyan)}
+  .mobile-board .mb-cta{margin-top:20px}
+  .hero-meta{margin-top:44px;display:flex;gap:46px;font-family:"Space Mono",monospace}
+  .hero-meta div{display:flex;flex-direction:column;gap:6px}
+  .hero-meta .num{font-size:30px;color:var(--cyan);font-weight:500}
+  .hero-meta .lbl{font-size:10px;letter-spacing:.24em;color:var(--dim)}
+
+  /* specs */
+  .specs{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;margin-top:38px;
+    background:var(--line);border:1px solid var(--line)}
+  .spec{background:rgba(7,11,18,.78);backdrop-filter:blur(4px);padding:22px 20px}
+  .spec .n{font-family:"Space Mono",monospace;font-size:10px;color:var(--cyan);letter-spacing:.2em;margin-bottom:11px}
+  .spec .t{font-size:17px;font-weight:500;margin-bottom:7px}
+  .spec .d{font-size:13px;color:var(--dim);line-height:1.5;font-weight:300}
+
+  /* pipeline */
+  .pipe{margin-top:32px;max-width:540px}
+  .pstep{display:flex;gap:20px;padding:18px 0;border-bottom:1px solid var(--line)}
+  .pstep .idx{font-family:"Space Mono",monospace;font-size:12px;color:var(--cyan);width:34px;flex:none}
+  .pstep .pt{font-size:17px;font-weight:500;margin-bottom:4px}
+  .pstep .pd{font-size:13px;color:var(--dim);line-height:1.5;font-weight:300}
+
+  /* objectives */
+  .objs{margin-top:32px;display:flex;flex-direction:column;gap:1px;background:var(--line);
+    border:1px solid var(--line);max-width:540px}
+  .obj{background:rgba(7,11,18,.8);backdrop-filter:blur(4px);padding:16px 20px;display:flex;gap:16px;
+    align-items:center;font-size:15px;color:var(--ink);font-weight:400}
+  .obj span{font-family:"Space Mono",monospace;font-size:11px;color:var(--cyan);letter-spacing:.1em;flex:none}
+  .contact{display:inline-block;margin-top:30px;font-family:"Space Mono",monospace;font-size:13px;
+    letter-spacing:.16em;color:var(--cyan);text-decoration:none;border:1px solid var(--line);
+    padding:15px 28px;transition:background .3s,color .3s}
+  .contact:hover{background:var(--cyan);color:var(--bg)}
+
+  /* detection */
+  .sim-btn{margin-top:36px;font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.26em;
+    color:var(--bg);background:var(--cyan);border:0;padding:18px 38px;cursor:pointer;
+    transition:transform .2s,box-shadow .3s,background .3s;box-shadow:0 0 30px rgba(255,140,66,.35)}
+  .sim-btn:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(255,140,66,.6)}
+  .sim-btn.alerted{background:var(--red);box-shadow:0 0 50px rgba(255,77,94,.6);color:#fff}
+  .sim-readout{margin-top:24px;font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.16em;
+    color:var(--dim);min-height:18px;transition:color .3s}
+  .sim-readout.alert{color:var(--red)}.sim-readout.ok{color:var(--cyan)}
+
+  /* research */
+  .research-card{margin-top:32px;border:1px solid var(--line);background:var(--glass);
+    backdrop-filter:blur(8px);padding:32px;max-width:540px}
+  .research-card .tag{font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.24em;color:var(--amber);margin-bottom:16px}
+  .research-card .rt{font-size:22px;font-weight:500;line-height:1.25;margin-bottom:12px}
+  .research-card .rmeta{font-family:"Space Mono",monospace;font-size:12px;color:var(--dim);
+    line-height:1.9;border-top:1px solid var(--line);padding-top:15px;margin-top:16px}
+  .research-card .rmeta b{color:var(--ink);font-weight:400}
+
+  /* cta */
+  #cta{align-items:center;text-align:center;min-height:92vh}
+  #cta h2{font-size:clamp(40px,7vw,90px)}
+  .footer-meta{margin-top:54px;display:flex;gap:54px;font-family:"Space Mono",monospace;
+    font-size:11px;letter-spacing:.2em;color:var(--dim);flex-wrap:wrap;justify-content:center}
+  footer{position:relative;z-index:10;padding:36px 52px 96px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;font-family:"Space Mono",monospace;
+    font-size:10px;letter-spacing:.2em;color:var(--dim);flex-wrap:wrap;gap:12px}
+
+  /* loader */
+  #loader{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:22px;transition:opacity .8s}
+  #loader.gone{opacity:0;pointer-events:none}
+  .load-ring{width:58px;height:58px;border:1px solid rgba(255,140,66,.2);border-top-color:var(--cyan);
+    border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .load-txt{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.34em;color:var(--dim)}
+
+  @media(max-width:860px){
+    nav{padding:16px 18px}.nav-links{display:none}.hamburger{display:flex}
+    section{padding:0 18px}.block{max-width:100%}
+    section.right{align-items:flex-start;text-align:left}
+    section.center{align-items:flex-start;text-align:left}
+    section.center .kicker{justify-content:flex-start}
+    #cta{text-align:left}.footer-meta{justify-content:flex-start}
+    .telemetry{display:none}.specs{grid-template-columns:1fr}
+    .hero-meta{gap:24px}.footer-meta{gap:22px}
+    /* solid panel behind copy so the 3D scene never competes with text */
+    .block{background:rgba(5,8,13,.82);backdrop-filter:blur(4px);padding:24px 20px;
+      border:1px solid rgba(255,140,66,.1)}
+    .block::before{display:none}
+    .hero-title{text-shadow:0 0 40px rgba(255,140,66,.3)}
+    /* dim the 3D layer a touch on phones */
+    #scene{opacity:.62}
+    .switcher{bottom:22px;padding:4px}.switcher button{padding:10px 14px;font-size:9px}
+    .cta-primary,.cta-secondary{padding:15px 22px;font-size:11px}
+  }
+</style>
+<style>/* variant 8 layout */
+#scene{opacity:0.8}
+#hero{align-items:flex-end;text-align:right}#hero .kicker{justify-content:flex-end}#hero .hero-cta{justify-content:flex-end}
+#hero .block{display:flex;flex-direction:column}#hero .kicker{order:0}.hero-benefit{order:1;font-size:clamp(34px,7vw,96px);font-weight:700;letter-spacing:-.02em;line-height:.96;margin-top:18px}.hero-title{order:2;font-size:clamp(24px,3.5vw,46px);opacity:.85;font-weight:500}.hero-sub{order:3}.hero-cta{order:4}.wl-count{order:5}
+</style>
+</head>
+<body>
+
+<div id="loader"><div class="load-ring"></div><div class="load-txt">INITIALIZING NEURAL ARRAY</div></div>
+
+<canvas id="scene"></canvas>
+<div class="vignette"></div>
+<div class="scanlines"></div>
+<div class="grain"></div>
+<div class="topfade"></div>
+
+<div class="frame">
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+</div>
+
+<nav>
+  <div class="brand"><span class="dot"></span>AXON&nbsp;AI</div>
+  <div class="nav-links">
+    <a href="#mission">MISSION</a><a href="#system">SYSTEM</a><a href="#pipeline">PIPELINE</a>
+    <a href="#detect">DETECTION</a><a href="#research">RESEARCH</a><a href="#cta">CONTACT</a>
+    <a id="consoleLink" target="_blank" rel="noopener" style="color:var(--cyan);opacity:.9">CONSOLE ↗</a>
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="mobile-board" id="mobileBoard">
+  <a href="#mission" data-close>MISSION</a>
+  <a href="#system" data-close>SYSTEM</a>
+  <a href="#pipeline" data-close>PIPELINE</a>
+  <a href="#detect" data-close>DETECTION</a>
+  <a href="#research" data-close>RESEARCH</a>
+  <a href="#cta" data-close>CONTACT</a>
+  <a id="mbConsole" target="_blank" rel="noopener" data-close style="color:var(--cyan)">CONSOLE ↗</a>
+  <button class="cta-primary mb-cta js-waitlist" data-close>JOIN THE WAITLIST</button>
+</div>
+
+<div class="telemetry" id="tel">
+  <h4>LIVE TELEMETRY <span id="tel-clock">00:00</span></h4>
+  <div class="trow"><span>LINEAR ACCEL</span><b id="t-force">18 g</b></div>
+  <div class="tbar"><i id="b-force" style="width:15%"></i></div>
+  <div class="trow"><span>ANGULAR ACCEL</span><b id="t-rot">820 rad/s²</b></div>
+  <div class="tbar"><i id="b-rot" style="width:11%"></i></div>
+  <div class="trow"><span>SAMPLE RATE</span><b>1000 Hz</b></div>
+  <div class="tbar"><i style="width:88%"></i></div>
+  <div class="trow"><span>ARRAY STATUS</span><b id="t-status" class="status-ok">NOMINAL</b></div>
+  <div class="tmodel"><span>ACTIVE MODEL</span><b id="t-model">SMART HELMET</b></div>
+  <div class="tmodel"><span id="be-label" style="color:var(--dim)">○ BACKEND OFFLINE</span><b id="be-count"></b></div>
+</div>
+
+<div class="switcher" id="switcher">
+  <button data-m="brain">NEURAL</button>
+  <button data-m="helmet" class="active">HELMET</button>
+  <button data-m="array">ARRAY</button>
+</div>
+
+<main>
+  <section id="hero" data-anchor="left">
+    <div class="block">
+      <div class="kicker">SMART HELMET SYSTEM</div>
+      <h1 class="hero-title">AXON <em>AI</em></h1>
+      <p class="hero-benefit">Real-time concussion detection.</p>
+      <p class="hero-sub">A smart football helmet that catches dangerous head impacts the instant they happen — sensing the hit, scoring its force, and <b>alerting coaches in milliseconds</b>, before a second impact can land.</p>
+      <div class="hero-meta">
+        <div><span class="num">1000Hz</span><span class="lbl">SAMPLE RATE</span></div>
+        <div><span class="num">&lt;50ms</span><span class="lbl">DETECTION LATENCY</span></div>
+        <div><span class="num">$3B</span><span class="lbl">SAFETY MARKET</span></div>
+      </div>
+      <div class="hero-cta">
+        <button class="cta-primary js-waitlist">JOIN THE WAITLIST</button>
+        <a class="cta-secondary" href="#system">EXPLORE THE SYSTEM</a>
+      </div>
+      <div class="wl-count" id="wlCount"></div>
+    </div>
+  </section>
+
+  <section id="mission" data-anchor="left">
+    <div class="block reveal">
+      <div class="kicker">00 / THE MISSION</div>
+      <h2>Make football<br><em>safer for all.</em></h2>
+      <p class="body">Built by a founder who lived the problem — two Grade 2 concussions across a varsity football career. Axon turns head impacts from guesswork into data, moving the sideline from speculation to a real-time, data-driven decision the moment a hit happens.</p>
+      <div class="objs">
+        <div class="obj"><span>01</span>Delivers real-time contact data to coaches and players</div>
+        <div class="obj"><span>02</span>Records and flags potential concussions as they occur</div>
+        <div class="obj"><span>03</span>Provides recommendations following every head impact</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="system" data-anchor="left">
+    <div class="block reveal">
+      <div class="kicker">01 / THE ARCHITECTURE</div>
+      <h2>A nervous system<br>for the <em>helmet</em>.</h2>
+      <p class="body">Axon distributes pressure, acceleration, and rotation sensors across the shell, streams them to a cloud backbone, and runs detection at the edge of every impact. The hardware feels the hit. The model decides what it means.</p>
+      <div class="specs">
+        <div class="spec"><div class="n">SENSE</div><div class="t">Adafruit BNO085</div><div class="d">A 9-DOF IMU in the helmet detecting sudden acceleration and rotational change.</div></div>
+        <div class="spec"><div class="n">PROCESS</div><div class="t">Particle Boron MCU</div><div class="d">Onboard microcontroller reading and processing the sensor data at the edge.</div></div>
+        <div class="spec"><div class="n">STREAM</div><div class="t">Firebase Firestore</div><div class="d">NoSQL cloud database ingesting flexible impact records in real time.</div></div>
+        <div class="spec"><div class="n">ALERT</div><div class="t">FlutterFlow App</div><div class="d">Coaches monitor player status live; athletes review post-activity statistics.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pipeline" class="right" data-anchor="right">
+    <div class="block reveal">
+      <div class="kicker">02 / SIGNAL PATH</div>
+      <h2>From impact<br>to <em>alert</em>.</h2>
+      <p class="body">Four stages, one continuous loop, running every millisecond a player is on the field.</p>
+      <div class="pipe">
+        <div class="pstep"><div class="idx">/01</div><div><div class="pt">Impact Captured</div><div class="pd">The BNO085 IMU registers sudden linear acceleration and rotational change inside the helmet.</div></div></div>
+        <div class="pstep"><div class="idx">/02</div><div><div class="pt">Telemetry Uplinked</div><div class="pd">The Particle Boron MCU streams readings to Firebase Firestore without leaving the sideline.</div></div></div>
+        <div class="pstep"><div class="idx">/03</div><div><div class="pt">Model Evaluates</div><div class="pd">Detection logic flags impacts that cross concussion-risk thresholds.</div></div></div>
+        <div class="pstep"><div class="idx">/04</div><div><div class="pt">Coach Notified</div><div class="pd">A real-time alert reaches the staff before a second hit can land.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="detect" class="center" data-anchor="center">
+    <div class="block reveal">
+      <div class="kicker">03 / DETECTION ENGINE</div>
+      <h2>See it <em>fire</em>.</h2>
+      <p class="body">The array is live. Send a simulated impact through the system and watch detection happen — the strike point flares, force spikes past threshold, and the injured region lights up.</p>
+      <button class="sim-btn" id="simBtn">SIMULATE IMPACT</button>
+      <div class="sim-readout ok" id="simOut">ARRAY ARMED — AWAITING EVENT</div>
+    </div>
+  </section>
+
+  <section id="research" class="right" data-anchor="right">
+    <div class="block reveal">
+      <div class="kicker">04 / PEER-REVIEWED</div>
+      <h2>Not a concept.<br><em>Published.</em></h2>
+      <p class="body">Axon AI began as a personal problem — two Grade 2 concussions across a varsity football career — and became formal research presented to an international audience.</p>
+      <div class="research-card">
+        <div class="tag">SIGML 2026 // VIENNA, AUSTRIA</div>
+        <div class="rt">A Smart Helmet System for Real-Time Concussion Detection in Football Players</div>
+        <div class="rmeta">
+          <b>VENUE</b> &nbsp;7th Intl. Conference on Signal Processing & Machine Learning<br>
+          <b>DATE</b> &nbsp;&nbsp;&nbsp;March 14–15, 2026 · Vienna, Austria<br>
+          <b>STATUS</b> &nbsp;Published in conference journal · Certificate of Appreciation
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="cta" class="center" data-anchor="center">
+    <div class="block reveal">
+      <div class="kicker">05 / DEPLOYMENT</div>
+      <h2>Built before<br>the <em>blueprint.</em></h2>
+      <p class="body" style="max-width:600px;margin:0 auto">A completed product with published research behind it — built by its founder, Hao Chang, and piloting with high school football programs in Orange County. The detection layer that youth sports has been missing.</p>
+      <div class="hero-cta" style="justify-content:center">
+        <button class="cta-primary js-waitlist">JOIN THE WAITLIST</button>
+        <a class="contact" href="mailto:haochang164@gmail.com" style="margin-top:0;padding:16px 26px">haochang164@gmail.com</a>
+      </div>
+      <div class="footer-meta">
+        <span>PROJECT LEAD — HAO CHANG</span>
+        <span>STATUS — PILOT PHASE 2026</span>
+        <span>MARKET — YOUTH SPORTS SAFETY</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>AXON AI © 2026 — NEURAL SENSOR PLATFORM</span>
+  <span>DESIGNED FOR THE ATHLETES WHO TAKE THE HIT</span>
+</footer>
+
+<div class="modal" id="wlModal">
+  <div class="modal-card">
+    <button class="modal-close" id="wlClose" aria-label="Close">×</button>
+    <h3>Join the Waitlist</h3>
+    <p>Be first to pilot Axon AI with your program. Drop your email and we'll reach out.</p>
+    <input id="wlEmail" type="email" placeholder="you@email.com" autocomplete="email" />
+    <button class="cta-primary" id="wlSubmit" style="width:100%">JOIN THE WAITLIST</button>
+    <div class="modal-msg" id="wlMsg"></div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+/* ============ simplex noise (compact, seeded) ============ */
+function buildSimplex(){
+  const p = new Uint8Array(256); for(let i=0;i<256;i++) p[i]=i;
+  for(let i=255;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=p[i];p[i]=p[j];p[j]=t;}
+  const perm=new Uint8Array(512); for(let i=0;i<512;i++) perm[i]=p[i&255];
+  const g=[[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],[1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],[0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
+  const F=1/3,G=1/6;
+  return (x,y,z)=>{
+    let n0,n1,n2,n3; const s=(x+y+z)*F;
+    const i=Math.floor(x+s),j=Math.floor(y+s),k=Math.floor(z+s); const t=(i+j+k)*G;
+    const x0=x-(i-t),y0=y-(j-t),z0=z-(k-t);
+    let i1,j1,k1,i2,j2,k2;
+    if(x0>=y0){ if(y0>=z0){i1=1;j1=0;k1=0;i2=1;j2=1;k2=0;}
+      else if(x0>=z0){i1=1;j1=0;k1=0;i2=1;j2=0;k2=1;} else{i1=0;j1=0;k1=1;i2=1;j2=0;k2=1;} }
+    else{ if(y0<z0){i1=0;j1=0;k1=1;i2=0;j2=1;k2=1;}
+      else if(x0<z0){i1=0;j1=1;k1=0;i2=0;j2=1;k2=1;} else{i1=0;j1=1;k1=0;i2=1;j2=1;k2=0;} }
+    const x1=x0-i1+G,y1=y0-j1+G,z1=z0-k1+G;
+    const x2=x0-i2+2*G,y2=y0-j2+2*G,z2=z0-k2+2*G;
+    const x3=x0-1+3*G,y3=y0-1+3*G,z3=z0-1+3*G;
+    const ii=i&255,jj=j&255,kk=k&255;
+    const gi0=perm[ii+perm[jj+perm[kk]]]%12, gi1=perm[ii+i1+perm[jj+j1+perm[kk+k1]]]%12,
+          gi2=perm[ii+i2+perm[jj+j2+perm[kk+k2]]]%12, gi3=perm[ii+1+perm[jj+1+perm[kk+1]]]%12;
+    let t0=.6-x0*x0-y0*y0-z0*z0; n0=t0<0?0:(t0*=t0,t0*t0*(g[gi0][0]*x0+g[gi0][1]*y0+g[gi0][2]*z0));
+    let t1=.6-x1*x1-y1*y1-z1*z1; n1=t1<0?0:(t1*=t1,t1*t1*(g[gi1][0]*x1+g[gi1][1]*y1+g[gi1][2]*z1));
+    let t2=.6-x2*x2-y2*y2-z2*z2; n2=t2<0?0:(t2*=t2,t2*t2*(g[gi2][0]*x2+g[gi2][1]*y2+g[gi2][2]*z2));
+    let t3=.6-x3*x3-y3*y3-z3*z3; n3=t3<0?0:(t3*=t3,t3*t3*(g[gi3][0]*x3+g[gi3][1]*y3+g[gi3][2]*z3));
+    return 32*(n0+n1+n2+n3);
+  };
+}
+const noise = buildSimplex();
+
+/* ============ renderer / scene ============ */
+const canvas=document.getElementById('scene');
+const IS_MOBILE = innerWidth < 760;
+const renderer=new THREE.WebGLRenderer({canvas,antialias:!IS_MOBILE,alpha:true});
+renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, IS_MOBILE?1.5:2));
+const scene=new THREE.Scene(); scene.fog=new THREE.FogExp2(0x0c0703,0.05);
+const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,0.1,100); camera.position.set(0,0,9);
+
+const CYAN=new THREE.Color(0xff8c42), RED=new THREE.Color(0xff4d5e);
+
+// lights (for helmet standard material)
+scene.add(new THREE.AmbientLight(0x223344,1.1));
+const key=new THREE.DirectionalLight(0x8fc6ff,1.4); key.position.set(4,5,6); scene.add(key);
+const rim=new THREE.DirectionalLight(0xff8c42,1.1); rim.position.set(-5,-2,-4); scene.add(rim);
+const pt=new THREE.PointLight(0xff8c42,2,20); pt.position.set(0,0,4); scene.add(pt);
+
+const stage=new THREE.Group(); scene.add(stage);
+const nodeGeo=new THREE.SphereGeometry(0.06,14,14);
+function makeShock(){
+  const m=new THREE.Mesh(new THREE.RingGeometry(0.08,0.13,64),
+    new THREE.MeshBasicMaterial({color:RED,transparent:true,opacity:0,side:THREE.DoubleSide,blending:THREE.AdditiveBlending}));
+  m.visible=false; return m;
+}
+// reusable fresnel rim-glow material (uTime-driven)
+function fresnelMat(deep,rimC,opacity,power,glow){
+  return new THREE.ShaderMaterial({
+    transparent:true, side:THREE.DoubleSide,
+    uniforms:{uTime:{value:0},uDeep:{value:new THREE.Color(deep)},uRim:{value:new THREE.Color(rimC)},
+      uPow:{value:power},uGlow:{value:glow},uOpacity:{value:opacity}},
+    vertexShader:`varying vec3 vN;varying vec3 vW;varying vec3 vP;
+      void main(){vP=position;vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;
+        vN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*w;}`,
+    fragmentShader:`varying vec3 vN;varying vec3 vW;varying vec3 vP;
+      uniform vec3 uDeep,uRim;uniform float uTime,uPow,uGlow,uOpacity;
+      void main(){vec3 V=normalize(cameraPosition-vW);
+        float f=pow(1.0-max(dot(normalize(vN),V),0.0),uPow);
+        vec3 col=mix(uDeep,uRim,f*uGlow)+uRim*f*0.5;
+        col+=uRim*0.04*(0.5+0.5*sin(uTime*1.4+vP.y*5.0));
+        gl_FragColor=vec4(col,clamp(uOpacity+f*0.4,0.0,1.0));}`
+  });
+}
+// holographic visor material — fresnel + scan sweep + grid
+function visorMat(){
+  return new THREE.ShaderMaterial({
+    transparent:true,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false,
+    uniforms:{uTime:{value:0},uRim:{value:new THREE.Color(0xff8c42)},uHot:{value:new THREE.Color(0xffc79e)}},
+    vertexShader:`varying vec3 vN;varying vec3 vW;varying vec3 vP;
+      void main(){vP=position;vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;
+        vN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*w;}`,
+    fragmentShader:`varying vec3 vN;varying vec3 vW;varying vec3 vP;
+      uniform float uTime;uniform vec3 uRim,uHot;
+      void main(){vec3 V=normalize(cameraPosition-vW);
+        float f=pow(1.0-max(dot(normalize(vN),V),0.0),2.0);
+        vec3 col=uRim*(0.12+f*0.7);
+        float band=sin(vP.y*9.0-uTime*2.2);
+        col+=uHot*smoothstep(0.85,1.0,band)*0.7;            // moving scan line
+        float g=step(0.9,fract(vP.x*9.0))+step(0.9,fract(vP.y*9.0));
+        col+=uRim*g*0.12;                                    // grid
+        gl_FragColor=vec4(col,0.30+f*0.55);}`
+  });
+}
+
+/* ============ MODEL: BRAIN ============ */
+function buildBrain(){
+  const group=new THREE.Group();
+  const geo=new THREE.IcosahedronGeometry(1.55, IS_MOBILE?4:5);
+  const pos=geo.attributes.position;
+  const v=new THREE.Vector3();
+  for(let i=0;i<pos.count;i++){
+    v.fromBufferAttribute(pos,i); const dir=v.clone().normalize();
+    // ridged fbm -> gyri/sulci
+    let amp=0.5,freq=1.5,sum=0;
+    for(let o=0;o<4;o++){ sum+=(1-Math.abs(noise(dir.x*freq+10,dir.y*freq,dir.z*freq)))*amp; amp*=0.5; freq*=2.05; }
+    let r=1.55+sum*0.26;
+    // central longitudinal fissure between hemispheres
+    const fis=Math.exp(-(dir.x*dir.x)/0.010); r-=fis*0.20;
+    v.copy(dir).multiplyScalar(r);
+    // anatomical proportions: longer front-back(z), narrower(x), flatter top, fuller bottom
+    v.x*=0.92; v.z*=1.16; v.y*=0.82;
+    pos.setXYZ(i,v.x,v.y,v.z);
+  }
+  geo.computeVertexNormals();
+
+  const mat=new THREE.ShaderMaterial({
+    transparent:true,
+    uniforms:{ uTime:{value:0}, uDeep:{value:new THREE.Color(0x0a2333)}, uRim:{value:CYAN},
+      uImpactPos:{value:new THREE.Vector3(99,99,99)}, uImpactStr:{value:0} },
+    vertexShader:`varying vec3 vN; varying vec3 vW; varying vec3 vP;
+      void main(){ vP=position; vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz;
+        vN=normalize(mat3(modelMatrix)*normal);
+        gl_Position=projectionMatrix*viewMatrix*w; }`,
+    fragmentShader:`varying vec3 vN; varying vec3 vW; varying vec3 vP;
+      uniform vec3 uDeep,uRim; uniform float uTime,uImpactStr; uniform vec3 uImpactPos;
+      void main(){
+        vec3 V=normalize(cameraPosition-vW);
+        float fres=pow(1.0-max(dot(normalize(vN),V),0.0),3.0);
+        vec3 col=mix(uDeep,uRim*0.35,fres*0.6)+uRim*fres*0.9;
+        col+=uRim*0.05*(0.5+0.5*sin(uTime*1.2+vP.y*4.0));
+        float d=distance(vP,uImpactPos);
+        float glow=uImpactStr*smoothstep(1.1,0.0,d);
+        col=mix(col,vec3(1.0,0.25,0.32),clamp(glow*1.4,0.0,1.0));
+        col+=vec3(1.0,0.2,0.25)*glow*0.6;
+        gl_FragColor=vec4(col,0.92);
+      }`
+  });
+  const mesh=new THREE.Mesh(geo,mat); group.add(mesh);
+
+  // brain stem
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.22,0.6,16),
+    new THREE.MeshBasicMaterial({color:0x0a2333}));
+  stem.position.set(0,-1.0,-0.15); stem.rotation.x=0.4; group.add(stem);
+
+  // glowing neural points on surface
+  const sp=[]; for(let i=0;i<pos.count;i+=4) sp.push(pos.getX(i),pos.getY(i),pos.getZ(i));
+  const pg=new THREE.BufferGeometry(); pg.setAttribute('position',new THREE.Float32BufferAttribute(sp,3));
+  const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:0xffc79e,size:0.028,transparent:true,
+    opacity:0.8,blending:THREE.AdditiveBlending,depthWrite:false}));
+  group.add(pts);
+
+  // surface vertices for impact targeting
+  const verts=[]; for(let i=0;i<pos.count;i+=7) verts.push(new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)));
+
+  const shock=makeShock(); group.add(shock);
+  return {group,mat,pts,nodes:[],verts,shock,type:'brain',radius:1.7};
+}
+
+/* ============ MODEL: FUTURISTIC EXO-HELMET ============ */
+function buildHelmet(){
+  const group=new THREE.Group();
+  const timeMats=[];
+  const A=1.53,B=1.575,C=1.8;            // ellipsoid semi-axes (1.5 * scale)
+  // front surface z for a given (x,y) on the shell, pushed slightly out
+  const surfZ=(x,y,push)=>{ const ins=1-(x/A)**2-(y/B)**2; return ins<=0.03?null:C*Math.sqrt(ins)*push; };
+
+  // remove the front-face triangles so there's a real face opening
+  function carveFace(geo){
+    geo=geo.toNonIndexed();
+    const pos=geo.attributes.position, keep=[];
+    const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),ce=new THREE.Vector3();
+    for(let i=0;i<pos.count;i+=3){
+      a.fromBufferAttribute(pos,i); b.fromBufferAttribute(pos,i+1); c.fromBufferAttribute(pos,i+2);
+      ce.copy(a).add(b).add(c).multiplyScalar(1/3).normalize();
+      const inFace = ce.z>0.46 && ce.y<0.42 && ce.y>-0.66 && Math.abs(ce.x)<0.52;
+      if(!inFace){ a.toArray(keep,keep.length); b.toArray(keep,keep.length); c.toArray(keep,keep.length); }
+    }
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(keep,3));
+    g.computeVertexNormals(); return g;
+  }
+
+  // --- shell with carved face opening (fresnel glow) ---
+  const shellGeo=new THREE.SphereGeometry(1.5,120,120); shellGeo.scale(1.02,1.05,1.2);
+  const shellMat=fresnelMat(0x05121c,0xffc79e,0.6,3.2,0.9); timeMats.push(shellMat);
+  group.add(new THREE.Mesh(carveFace(shellGeo),shellMat));
+
+  // --- closed inner core => dark recessed face cavity through the opening ---
+  const coreGeo=new THREE.SphereGeometry(1.36,48,48); coreGeo.scale(1.02,1.05,1.2);
+  group.add(new THREE.Mesh(coreGeo,new THREE.MeshStandardMaterial({
+    color:0x04090f,metalness:0.85,roughness:0.5,emissive:0x05121a,emissiveIntensity:0.45})));
+
+  // --- glowing rim framing the face opening ---
+  const framePts=[],FR=60;
+  for(let i=0;i<=FR;i++){ const ang=i/FR*Math.PI*2;
+    const x=Math.cos(ang)*0.52, y=-0.12+Math.sin(ang)*0.5;
+    const z=surfZ(x,y,1.03)||C*0.2; framePts.push(new THREE.Vector3(x,y,z)); }
+  group.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(framePts,true),80,0.028,10,true),
+    new THREE.MeshBasicMaterial({color:CYAN})));
+
+  // --- facemask cage: horizontal + vertical bars, incl. a low chin bar (no gap underneath) ---
+  const maskMat=new THREE.MeshBasicMaterial({color:0xffc79e});
+  function addBar(getPt){ const pts=[],s=16;
+    for(let i=0;i<=s;i++){ const p=getPt(i/s); if(p) pts.push(p); }
+    if(pts.length>1) group.add(new THREE.Mesh(
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),s,0.02,8,false),maskMat)); }
+  // horizontal bars (brow, eye, nose, mouth, chin/under)
+  [[0.32,0.66],[0.10,0.72],[-0.14,0.70],[-0.40,0.60],[-0.62,0.40]].forEach(([y,xs])=>
+    addBar(u=>{ const x=-xs+2*xs*u; const z=surfZ(x,y,1.05); return z?new THREE.Vector3(x*1.05,y*1.05,z):null; }));
+  // vertical bars (center + two sides), curving down across the chin
+  [-0.38,0,0.38].forEach(x=>
+    addBar(u=>{ const y=0.42+(-0.66-0.42)*u; const z=surfZ(x,y,1.05); return z?new THREE.Vector3(x*1.05,y*1.05,z):null; }));
+
+  // --- crest fin along the top centerline ---
+  const finShape=new THREE.Shape();
+  finShape.moveTo(-1.2,0); finShape.quadraticCurveTo(0,0.42,1.25,0); finShape.lineTo(1.25,-0.04); finShape.quadraticCurveTo(0,0.30,-1.2,-0.04);
+  const fin=new THREE.Mesh(new THREE.ExtrudeGeometry(finShape,{depth:0.05,bevelEnabled:false}),
+    fresnelMat(0x07151f,0xff8c42,0.8,2.0,1.0)); timeMats.push(fin.material);
+  fin.position.set(0,1.16,-0.02); fin.rotation.set(Math.PI/2,0,0); fin.scale.set(1,1.05,1); group.add(fin);
+
+  // --- holographic forehead visor strip (above the opening) ---
+  const visGeo=new THREE.SphereGeometry(1.55,96,48,Math.PI*0.18,Math.PI*0.64,Math.PI*0.18,Math.PI*0.15);
+  visGeo.scale(1.02,1.05,1.2);
+  const visor=new THREE.Mesh(visGeo,visorMat()); timeMats.push(visor.material); group.add(visor);
+
+  // --- antenna accents (top rear sides) ---
+  const antMat=new THREE.MeshBasicMaterial({color:CYAN});
+  [-1,1].forEach(s=>{
+    const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.025,0.55,8),antMat);
+    ant.position.set(s*0.72,1.16,-0.35); ant.rotation.set(0.3,0,s*0.35); group.add(ant);
+    const tip=new THREE.Mesh(new THREE.SphereGeometry(0.045,12,12),antMat);
+    tip.position.set(s*0.86,1.40,-0.45); group.add(tip);
+  });
+
+  // --- orbiting holo rings ---
+  const holo=new THREE.Mesh(new THREE.TorusGeometry(2.1,0.008,8,128),
+    new THREE.MeshBasicMaterial({color:CYAN,transparent:true,opacity:0.5}));
+  holo.rotation.set(Math.PI*0.42,0.3,0); group.add(holo);
+  const holo2=new THREE.Mesh(new THREE.TorusGeometry(1.95,0.004,8,128),
+    new THREE.MeshBasicMaterial({color:0xff8c42,transparent:true,opacity:0.35}));
+  holo2.rotation.set(Math.PI*0.5,0,0.4); group.add(holo2);
+
+  // --- glowing sensor studs (kept off the open face) ---
+  const nodes=[]; const N=14,R=1.5;
+  for(let i=0;i<N;i++){ const phi=Math.acos(1-2*(i+0.5)/N), th=Math.PI*(1+Math.sqrt(5))*i;
+    const dz=Math.sin(phi)*Math.sin(th), dy=Math.cos(phi);
+    if(dz>0.46 && dy<0.42 && dy>-0.66) continue;   // skip the face-opening region
+    const x=R*Math.sin(phi)*Math.cos(th)*1.02, y=dy*R*1.05, z=dz*R*1.2;
+    const node=new THREE.Mesh(nodeGeo,new THREE.MeshBasicMaterial({color:CYAN}));
+    node.position.set(x,y,z); node.userData={flash:0}; group.add(node); nodes.push(node);
+  }
+
+  const shock=makeShock(); group.add(shock);
+  return {group,nodes,verts:null,shock,type:'mech',radius:1.6,timeMats,holo,holo2};
+}
+
+/* ============ MODEL: SENSOR ARRAY ============ */
+function buildArray(){
+  const group=new THREE.Group();
+  const core=new THREE.Mesh(new THREE.IcosahedronGeometry(1.55,2),
+    new THREE.MeshBasicMaterial({color:0x123a52,wireframe:true,transparent:true,opacity:0.55}));
+  group.add(core);
+  const cg=core.geometry.attributes.position; const cp=[];
+  for(let i=0;i<cg.count;i++) cp.push(cg.getX(i),cg.getY(i),cg.getZ(i));
+  const pgeo=new THREE.BufferGeometry(); pgeo.setAttribute('position',new THREE.Float32BufferAttribute(cp,3));
+  group.add(new THREE.Points(pgeo,new THREE.PointsMaterial({color:CYAN,size:0.05,transparent:true,
+    opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false})));
+  const shell=new THREE.Mesh(new THREE.IcosahedronGeometry(2.3,3),
+    new THREE.MeshBasicMaterial({color:0x0a2233,wireframe:true,transparent:true,opacity:0.16}));
+  group.add(shell);
+  const nodes=[]; const linkMat=new THREE.LineBasicMaterial({color:0x1c4a63,transparent:true,opacity:0.5});
+  const N=16,R=2.32;
+  for(let i=0;i<N;i++){
+    const phi=Math.acos(1-2*(i+0.5)/N), th=Math.PI*(1+Math.sqrt(5))*i;
+    const x=R*Math.sin(phi)*Math.cos(th),y=R*Math.cos(phi),z=R*Math.sin(phi)*Math.sin(th);
+    const node=new THREE.Mesh(nodeGeo,new THREE.MeshBasicMaterial({color:CYAN}));
+    node.position.set(x,y,z); node.userData={flash:0}; group.add(node); nodes.push(node);
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),node.position.clone().multiplyScalar(0.72)]),linkMat));
+  }
+  // rings
+  function ring(r,o,rx,ry){const m=new THREE.Mesh(new THREE.TorusGeometry(r,0.006,8,120),
+    new THREE.MeshBasicMaterial({color:CYAN,transparent:true,opacity:o}));m.rotation.set(rx,ry,0);return m;}
+  const r1=ring(2.7,0.4,Math.PI/2,0), r2=ring(2.95,0.2,Math.PI/2.4,0.4);
+  group.add(r1,r2);
+  const shock=makeShock(); group.add(shock);
+  return {group,nodes,verts:null,shock,type:'mech',radius:2.32,rings:[r1,r2]};
+}
+
+const models={ brain:buildBrain(), helmet:buildHelmet(), array:buildArray() };
+for(const k in models){ models[k].group.scale.setScalar(k==='brain'?1:0.001); models[k].group.visible=(k==='brain'); stage.add(models[k].group); }
+let active='helmet';
+
+/* ============ starfield ============ */
+const sc=1500, sp=new Float32Array(sc*3);
+for(let i=0;i<sc;i++){const r=14+Math.random()*28,t=Math.random()*6.28,p=Math.acos(2*Math.random()-1);
+  sp[i*3]=r*Math.sin(p)*Math.cos(t);sp[i*3+1]=r*Math.sin(p)*Math.sin(t);sp[i*3+2]=r*Math.cos(p);}
+const sg=new THREE.BufferGeometry(); sg.setAttribute('position',new THREE.Float32BufferAttribute(sp,3));
+const stars=new THREE.Points(sg,new THREE.PointsMaterial({color:0x274863,size:0.06,transparent:true,opacity:0.7}));
+scene.add(stars);
+
+/* ============ postprocessing ============ */
+const composer=new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene,camera));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), IS_MOBILE?0.6:0.9, 0.6, 0.18));
+
+/* ============ interaction state ============ */
+let mx=0,my=0,tmx=0,tmy=0;
+addEventListener('mousemove',e=>{tmx=e.clientX/innerWidth-0.5;tmy=e.clientY/innerHeight-0.5;});
+let scy=0,tsc=0;
+addEventListener('scroll',()=>{tsc=window.scrollY/innerHeight;});
+
+// section anchor -> model horizontal offset
+let targetOffset=2.2;
+const offsetFor=a=> (innerWidth<860?0 : a==='left'?2.2 : a==='right'?-2.2 : 0);
+const anchorObs=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting) targetOffset=offsetFor(e.target.dataset.anchor); });
+},{threshold:0.5});
+document.querySelectorAll('section').forEach(s=>anchorObs.observe(s));
+
+/* ============ impact ============ */
+let alertTimer=0;
+function triggerImpact(strong){
+  const m=models[active]; let point;
+  if(m.type==='brain'){
+    point=m.verts[Math.floor(Math.random()*m.verts.length)].clone();
+    m.mat.uniforms.uImpactPos.value.copy(point); m.mat.uniforms.uImpactStr.value=1;
+  } else {
+    const n=m.nodes[Math.floor(Math.random()*m.nodes.length)]; n.userData.flash=1; point=n.position.clone();
+  }
+  const s=m.shock; s.visible=true; s.position.copy(point.clone().multiplyScalar(1.02));
+  s.lookAt(0,0,0); s.scale.setScalar(1); s.material.opacity=0.9;
+  if(strong) alertTimer=2.6;
+}
+
+/* ---- backend wiring ---- */
+// Point this at your deployed backend (e.g. https://axon-backend.onrender.com).
+// Defaults to the local backend (run: cd backend && npm start).
+const AXON_API = (location.hostname==='localhost'||location.hostname==='127.0.0.1')
+  ? 'http://localhost:4000' : 'http://localhost:4000';
+const beLabel=document.getElementById('be-label'), beCount=document.getElementById('be-count');
+document.getElementById('consoleLink').href=AXON_API;
+let backendOn=false;
+function setBackend(on,impacts){ backendOn=on;
+  beLabel.textContent=on?'● BACKEND LIVE':'○ BACKEND OFFLINE';
+  beLabel.style.color=on?'#ff8c42':'#6f8197';
+  beCount.textContent=(on&&impacts!=null)?impacts.toLocaleString()+' logged':'';
+}
+async function pollBackend(){
+  try{ const r=await fetch(AXON_API+'/api/public/stats',{cache:'no-store'}); if(!r.ok) throw 0;
+    const d=await r.json(); setBackend(true,d.impacts); }
+  catch{ setBackend(false); }
+}
+pollBackend(); setInterval(pollBackend,15000);
+
+/* ---- waitlist ---- */
+const wlModal=document.getElementById('wlModal'), wlEmail=document.getElementById('wlEmail'), wlMsg=document.getElementById('wlMsg');
+const openWaitlist=()=>{ wlModal.classList.add('open'); wlMsg.textContent=''; wlMsg.className='modal-msg'; setTimeout(()=>wlEmail.focus(),60); };
+const closeWaitlist=()=>wlModal.classList.remove('open');
+document.querySelectorAll('.js-waitlist').forEach(b=>b.addEventListener('click',openWaitlist));
+document.getElementById('wlClose').addEventListener('click',closeWaitlist);
+wlModal.addEventListener('click',e=>{ if(e.target===wlModal) closeWaitlist(); });
+const WAITLIST_EMAIL='haochang164@gmail.com';
+async function submitWaitlist(){
+  const email=wlEmail.value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ wlMsg.className='modal-msg bad'; wlMsg.textContent='Enter a valid email.'; return; }
+  wlMsg.className='modal-msg'; wlMsg.textContent='Submitting…';
+  // best-effort: also store in our own backend (for the live counter) if it's reachable
+  fetch(AXON_API+'/api/public/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})})
+    .then(r=>r.ok?r.json():null).then(d=>{ if(d) setWlCount(d.count); }).catch(()=>{});
+  // primary: email every signup to haochang164@gmail.com via Formsubmit (works on the static GitHub Pages site)
+  try{
+    const r=await fetch('https://formsubmit.co/ajax/'+WAITLIST_EMAIL,{
+      method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({ email, _subject:'New Axon AI waitlist signup', _template:'table', _captcha:'false' })
+    });
+    const d=await r.json().catch(()=>({}));
+    if(r.ok && String(d.success)==='true'){
+      wlMsg.className='modal-msg ok'; wlMsg.textContent="You're on the waitlist — we'll reach out.";
+      wlEmail.value='';
+    } else throw new Error(d.message||'submit failed');
+  }catch(e){
+    // last-resort fallback so a signup never gets lost
+    wlMsg.className='modal-msg ok'; wlMsg.textContent='Opening your email app to finish…';
+    location.href=`mailto:${WAITLIST_EMAIL}?subject=${encodeURIComponent('Axon AI Waitlist')}&body=${encodeURIComponent('Please add me to the Axon AI waitlist: '+email)}`;
+  }
+}
+document.getElementById('wlSubmit').addEventListener('click',submitWaitlist);
+wlEmail.addEventListener('keydown',e=>{ if(e.key==='Enter') submitWaitlist(); });
+function setWlCount(n){ const el=document.getElementById('wlCount'); if(el&&n!=null) el.textContent='▸ '+n+' already on the waitlist'; }
+fetch(AXON_API+'/api/public/waitlist/count').then(r=>r.ok?r.json():null).then(d=>{ if(d&&d.count>0) setWlCount(d.count); }).catch(()=>{});
+
+/* ---- mobile nav board ---- */
+const hamburger=document.getElementById('hamburger'), mobileBoard=document.getElementById('mobileBoard');
+document.getElementById('mbConsole').href=AXON_API;
+const closeBoard=()=>{ mobileBoard.classList.remove('open'); hamburger.classList.remove('on'); document.body.style.overflow=''; };
+hamburger.addEventListener('click',()=>{ const open=mobileBoard.classList.toggle('open'); hamburger.classList.toggle('on',open); document.body.style.overflow=open?'hidden':''; });
+mobileBoard.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click',closeBoard));
+
+const simBtn=document.getElementById('simBtn'), simOut=document.getElementById('simOut');
+simBtn.addEventListener('click',()=>{
+  triggerImpact(true);
+  simBtn.classList.add('alerted'); simBtn.textContent='IMPACT DETECTED';
+  simOut.className='sim-readout alert';
+  const peak=75+Math.floor(Math.random()*30), ang=4500+Math.floor(Math.random()*2500);
+  let gg=0;
+  const ramp=setInterval(()=>{ gg+=Math.ceil((peak-gg)/3)+2; if(gg>=peak){gg=peak;clearInterval(ramp);}
+    simOut.textContent=`LINEAR ${gg}g · ANGULAR ${ang} rad/s² · CONCUSSION RISK FLAGGED`; },40);
+  // log the event to the backend (graceful no-op if offline)
+  fetch(AXON_API+'/api/public/impacts',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({linear_g:peak,angular_accel:ang})})
+    .then(r=>r.ok?r.json():null).then(d=>{ if(d) setBackend(true,d.totals.impacts); }).catch(()=>{});
+  setTimeout(()=>{ simBtn.classList.remove('alerted'); simBtn.textContent='SIMULATE IMPACT';
+    simOut.className='sim-readout ok';
+    simOut.textContent=backendOn?'ALERT DISPATCHED — LOGGED TO BACKEND':'ALERT DISPATCHED — ARRAY RE-ARMED'; },2800);
+});
+
+/* ============ model switcher ============ */
+const tModel=document.getElementById('t-model');
+const labels={brain:'NEURAL CORTEX',helmet:'SMART HELMET',array:'SENSOR ARRAY'};
+document.getElementById('switcher').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('.switcher button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); active=b.dataset.m; tModel.textContent=labels[active];
+  for(const k in models) models[k].group.visible=true; // re-enable for fade-in
+});
+
+/* ============ telemetry ============ */
+const tel=document.getElementById('tel');
+const tForce=document.getElementById('t-force'),tRot=document.getElementById('t-rot');
+const bForce=document.getElementById('b-force'),bRot=document.getElementById('b-rot');
+const tStatus=document.getElementById('t-status'),tClock=document.getElementById('tel-clock');
+let telSec=0;
+setInterval(()=>{
+  if(alertTimer>0){ const f=72+Math.floor(Math.random()*34),r=4500+Math.floor(Math.random()*2800);
+    tForce.textContent=f+' g'; tRot.textContent=r+' rad/s²';
+    bForce.style.width=Math.min(100,f*0.9)+'%'; bForce.style.background='#ff4d5e';
+    bRot.style.width=Math.min(100,r/75)+'%'; bRot.style.background='#ff4d5e';
+    tStatus.textContent='IMPACT'; tStatus.className='status-alert';
+  } else { const f=10+Math.floor(Math.random()*16),r=350+Math.floor(Math.random()*1100);
+    tForce.textContent=f+' g'; tRot.textContent=r+' rad/s²';
+    bForce.style.width=Math.min(100,f*0.9)+'%'; bForce.style.background='#ff8c42';
+    bRot.style.width=Math.min(100,r/75)+'%'; bRot.style.background='#ff8c42';
+    tStatus.textContent='NOMINAL'; tStatus.className='status-ok'; }
+  telSec++; tClock.textContent=String(Math.floor(telSec/60)).padStart(2,'0')+':'+String(telSec%60).padStart(2,'0');
+},700);
+setInterval(()=>{ if(alertTimer<=0&&Math.random()>0.45) triggerImpact(false); },2800);
+
+/* reveal + telemetry visibility */
+const rObs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:0.25});
+document.querySelectorAll('.reveal').forEach(el=>rObs.observe(el));
+new IntersectionObserver(es=>es.forEach(e=>tel.classList.toggle('show',!e.isIntersecting)),{threshold:0.4})
+  .observe(document.getElementById('hero'));
+
+/* ============ animation loop ============ */
+const clock=new THREE.Clock();
+let offset=2.2;
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05), t=clock.elapsedTime;
+  mx+=(tmx-mx)*0.05; my+=(tmy-my)*0.05; scy+=(tsc-scy)*0.06; offset+=(targetOffset-offset)*0.05;
+
+  stage.position.x=offset;
+  stage.rotation.y=t*0.12+mx*0.5;
+  stage.rotation.x=my*0.32+Math.sin(t*0.3)*0.04;
+
+  // per-model scale fade
+  for(const k in models){
+    const m=models[k]; const tgt=(k===active)?1:0.001;
+    m.group.scale.x+=(tgt-m.group.scale.x)*0.12;
+    m.group.scale.y=m.group.scale.z=m.group.scale.x;
+    if(m.group.scale.x<0.02 && k!==active) m.group.visible=false;
+    // gentle self-spin
+    m.group.rotation.y=t*0.1;
+  }
+
+  // brain uniforms
+  const bm=models.brain;
+  bm.mat.uniforms.uTime.value=t;
+  if(bm.mat.uniforms.uImpactStr.value>0) bm.mat.uniforms.uImpactStr.value=Math.max(0,bm.mat.uniforms.uImpactStr.value-dt*0.5);
+  if(bm.pts) bm.pts.material.opacity=0.55+Math.sin(t*2)*0.25;
+
+  // helmet shader time + orbiting holo rings
+  const hm=models.helmet;
+  if(hm.timeMats) hm.timeMats.forEach(m=>m.uniforms.uTime.value=t);
+  if(hm.holo){ hm.holo.rotation.z+=dt*0.5; hm.holo2.rotation.z-=dt*0.32; }
+
+  // array rings
+  if(models.array.rings){ models.array.rings[0].rotation.z+=dt*0.4; models.array.rings[1].rotation.z-=dt*0.25; }
+
+  // node flashes + shockwaves for all models
+  for(const k in models){
+    const m=models[k];
+    m.nodes.forEach(n=>{
+      if(n.userData.flash>0){ n.userData.flash-=dt*1.6; const f=Math.max(0,n.userData.flash);
+        n.material.color.copy(CYAN).lerp(RED,f); n.scale.setScalar(1+f*2.4); }
+      else { n.material.color.copy(CYAN); n.scale.setScalar(1+Math.sin(t*2+n.position.x)*0.12); }
+    });
+    const s=m.shock;
+    if(s.visible){ const sc=s.scale.x+dt*9; s.scale.setScalar(sc);
+      s.material.opacity=Math.max(0,0.9-sc*0.11); if(s.material.opacity<=0) s.visible=false; }
+  }
+
+  // camera
+  camera.position.z=9-Math.min(scy,4)*0.5;
+  camera.position.x+=(mx*1.0-camera.position.x)*0.05;
+  camera.position.y+=(-my*0.8-camera.position.y)*0.05;
+  camera.lookAt(stage.position.x*0.4,0,0);
+
+  stars.rotation.y=t*0.01;
+  composer.render();
+}
+animate();
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight); composer.setSize(innerWidth,innerHeight);
+  targetOffset=offsetFor(document.querySelector('section')?.dataset.anchor||'left');
+});
+
+addEventListener('load',()=>setTimeout(()=>document.getElementById('loader').classList.add('gone'),500));
+setTimeout(()=>document.getElementById('loader').classList.add('gone'),2500);
+</script>
+</body>
+</html>
