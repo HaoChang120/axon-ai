@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Axon module — interactive exploded view</title>
+<style>
+  html,body{margin:0;height:100%;background:#100d0a;font-family:ui-monospace,monospace}
+  #stage{width:100vw;height:100vh;position:relative;overflow:hidden}
+  canvas{display:block}
+  .lbl{position:absolute;transform:translate(-50%,-50%);pointer-events:none;white-space:nowrap;
+    font-size:12px;letter-spacing:.02em;color:#f5eee1;background:rgba(10,8,7,.66);border:1px solid rgba(245,238,225,.14);
+    border-radius:30px;padding:6px 12px;backdrop-filter:blur(6px);opacity:0;transition:opacity .35s}
+  .lbl b{color:#ee5a2a;font-weight:700;margin-right:7px}
+  #hint{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;color:#9a9184;display:flex;align-items:center;gap:9px}
+  #hint .k{color:#ee5a2a}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<div id="stage">
+  <div class="lbl" id="l0"><b>01</b>Particle Boron</div>
+  <div class="lbl" id="l1"><b>02</b>Gyroscope + battery</div>
+  <div class="lbl" id="l2"><b>03</b>FSR board · 2× ADS1115</div>
+  <div class="lbl" id="l3"><b>04</b>3D-printed enclosure</div>
+  <div id="hint"><span class="k">◉</span> <span id="hinttext">click a screw to open</span></div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const SIGNAL=0xee5a2a, AMBER=0xf2a44c;
+const stage=document.getElementById('stage');
+const W=()=>stage.clientWidth, H=()=>stage.clientHeight;
+
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(W(),H());
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.98;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+
+const scene=new THREE.Scene();
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+
+const camera=new THREE.PerspectiveCamera(40,W()/H(),0.1,100);
+camera.position.set(3.4,2.3,4.2);
+
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true; controls.dampingFactor=0.08; controls.enablePan=false;
+controls.minDistance=3.6; controls.maxDistance=11;
+controls.autoRotate=true; controls.autoRotateSpeed=0.7;
+controls.minPolarAngle=Math.PI*0.08; controls.maxPolarAngle=Math.PI*0.74; controls.target.set(0,0.4,0);
+
+scene.add(new THREE.AmbientLight(0x40342a,0.5));
+const key=new THREE.DirectionalLight(0xfff2e4,1.3); key.position.set(3.4,6,3.2); key.castShadow=true;
+key.shadow.mapSize.set(2048,2048); key.shadow.camera.near=1; key.shadow.camera.far=24;
+key.shadow.camera.left=-5; key.shadow.camera.right=5; key.shadow.camera.top=6; key.shadow.camera.bottom=-6; key.shadow.bias=-0.0004; scene.add(key);
+const rim=new THREE.DirectionalLight(SIGNAL,1.35); rim.position.set(-3.6,1.8,-3.2); scene.add(rim);
+const fill=new THREE.DirectionalLight(0xbfd0ff,0.28); fill.position.set(-2,0.6,3); scene.add(fill);
+
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(50,50), new THREE.ShadowMaterial({opacity:0.3}));
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+
+const M={
+  case:new THREE.MeshStandardMaterial({color:0xd9d3c7,roughness:0.9,metalness:0}),
+  perf:new THREE.MeshStandardMaterial({color:0x9c5a2c,roughness:0.5,metalness:0.15}),
+  ads:new THREE.MeshStandardMaterial({color:0x1b2b46,roughness:0.5,metalness:0.25}),
+  chip:new THREE.MeshStandardMaterial({color:0x0b0b0e,roughness:0.4,metalness:0.35}),
+  gold:new THREE.MeshStandardMaterial({color:0xd7a13e,metalness:0.95,roughness:0.32}),
+  boron:new THREE.MeshStandardMaterial({color:0x0c1016,roughness:0.45,metalness:0.25}),
+  label:new THREE.MeshStandardMaterial({color:0xcfcabf,roughness:0.7,metalness:0}),
+  usb:new THREE.MeshStandardMaterial({color:0xc2c6cb,metalness:0.85,roughness:0.28}),
+  lipo:new THREE.MeshStandardMaterial({color:0xb9bdc2,metalness:0.35,roughness:0.45}),
+  screw:new THREE.MeshStandardMaterial({color:0xb7bcc2,metalness:0.95,roughness:0.28}),
+};
+const add=(g,geo,mat,x,y,z)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;};
+const rbox=(w,h,d,r=0.012)=>new RoundedBoxGeometry(w,h,d,3,r);
+const wire=(g,pts,r,color)=>{const c=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p)));const m=new THREE.Mesh(new THREE.TubeGeometry(c,40,r,8,false),new THREE.MeshStandardMaterial({color,roughness:0.5}));m.castShadow=true;g.add(m);return m;};
+
+const PX=2.4, PZ=1.6, HW=0.58;       // footprint + housing wall height
+const CX=PX/2-0.15, CZ=PZ/2-0.15;
+
+const dev=new THREE.Group(); scene.add(dev);
+const housing=new THREE.Group(); dev.add(housing);
+const L0=new THREE.Group(), L1=new THREE.Group(), L2=new THREE.Group(); // boron / gyro+batt / fsr board
+dev.add(L0,L1,L2);
+
+// ===== housing (single 3D-printed enclosure) =====
+add(housing, rbox(PX,0.08,PZ,0.03), M.case, 0,0.04,0);                  // floor
+add(housing, rbox(0.09,HW,PZ,0.02), M.case, -(PX/2-0.045),HW/2,0);      // -x short wall (FSR bundle clips through)
+// +x short wall — rectangular HOLE for the USB-C adaptor (top level floats out, leaving this hole)
+;(function(){const wx=PX/2-0.045, hY=0.44, hH=0.18, hW=0.30, szW=(PZ-hW)/2;
+  add(housing, rbox(0.09,hY-hH/2,PZ,0.02), M.case, wx,(hY-hH/2)/2,0);                            // below hole
+  add(housing, rbox(0.09,HW-(hY+hH/2),PZ,0.02), M.case, wx,(hY+hH/2+HW)/2,0);                    // above hole
+  for(const sz of [-1,1]) add(housing, rbox(0.09,hH,szW,0.02), M.case, wx,hY,sz*(PZ/2-szW/2));   // hole sides
+})();
+add(housing, rbox(PX,HW,0.09,0.02), M.case, 0,HW/2,-(PZ/2-0.045));      // -z long wall (solid)
+// +z long wall — rectangular HOLE for the on/off lever, near the charging-port end (floats out, leaving this hole)
+;(function(){const wz=PZ/2-0.045, hY=0.30, hH=0.18, hW=0.26, hX=0.7;
+  add(housing, rbox(PX,hY-hH/2,0.09,0.02), M.case, 0,(hY-hH/2)/2,wz);                  // below hole
+  add(housing, rbox(PX,HW-(hY+hH/2),0.09,0.02), M.case, 0,(hY+hH/2+HW)/2,wz);          // above hole
+  const lW=(hX-hW/2)+PX/2, rW=PX/2-(hX+hW/2);                                          // left/right pillar widths
+  add(housing, rbox(lW,hH,0.09,0.02), M.case, -PX/2+lW/2, hY, wz);                     // left of hole
+  add(housing, rbox(rW,hH,0.09,0.02), M.case, PX/2-rW/2, hY, wz);                      // right of hole
+})();
+
+// 4 corner screws on the housing rim (clickable)
+const screws=[];
+for(const sx of [-1,1]) for(const sz of [-1,1]){
+  const s=new THREE.Group();
+  add(s, new THREE.CylinderGeometry(0.085,0.095,0.06,6), M.screw, 0,0,0);
+  add(s, rbox(0.11,0.012,0.02,0.002), M.chip, 0,0.033,0);
+  add(s, rbox(0.02,0.012,0.11,0.002), M.chip, 0,0.033,0);
+  s.position.set(sx*CX,HW+0.01,sz*CZ); s.userData.screw=true;
+  s.traverse(o=>o.userData.screw=true);
+  housing.add(s); screws.push(s);
+}
+
+// ===== L2 — FSR board + 2 ADS1115 (lowest component) =====
+add(L2, rbox(PX-0.4,0.06,PZ-0.4,0.01), M.perf, 0,0,0);
+for(const sx of [-1,1]){
+  add(L2, rbox(0.56,0.07,0.66,0.012), M.ads, sx*0.46,0.06,-0.02);
+  add(L2, rbox(0.16,0.05,0.16,0.01), M.chip, sx*0.46,0.115,-0.02);
+  add(L2, rbox(0.52,0.035,0.05,0.005), M.gold, sx*0.46,0.095,0.24);
+  add(L2, rbox(0.52,0.035,0.05,0.005), M.gold, sx*0.46,0.095,-0.28);
+}
+// green status LEDs
+const leds=[];
+const led=(layer,color,x,y,z,s=0.03)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(s,16,16),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:2.0}));m.position.set(x,y,z);layer.add(m);leds.push({m,b:2.0,ph:Math.random()*6.3});};
+led(L2,0x39d353,-0.46,0.15,0.16); led(L2,0x39d353,0.46,0.15,0.16);
+// FSR wires enter as one bundle at the short (-x) side, dip UNDER the board,
+// and solder to the underside of the two ADS1115 adapters.
+const entryX=-(PX-0.4)/2, under=-0.05;            // board bottom ≈ -0.03
+const solderMat=new THREE.MeshStandardMaterial({color:0x9aa0a6,metalness:0.7,roughness:0.35});
+for(let i=0;i<8;i++){
+  const ads=(i<4)?-0.46:0.46, k=i%4, zPin=-0.21+k*0.14;
+  const zb=(i-3.5)*0.03, col=(i%2)?0x16161b:0xd83a36;
+  wire(L2,[
+    [entryX-1.0,0.05,zb],                          // outside, bundled tight
+    [entryX-0.32,0.0,zb],                          // approaching the entry slot
+    [entryX-0.0,under,zb*0.7],                      // crossing the edge, dropping under
+    [entryX+0.3,under-0.01,(zb+zPin)*0.4],          // routing along the underside
+    [ads-0.16,under,zPin*0.85],
+    [ads,under+0.005,zPin]                          // solder joint under the adapter
+  ],0.014,col);
+  add(L2,new THREE.SphereGeometry(0.022,10,10),solderMat,ads,under+0.012,zPin); // solder blob
+}
+
+// ===== L1 — gyroscope + battery =====
+add(L1, rbox(0.52,0.07,0.52,0.012), M.ads, -0.6,0,0.12);   // gyro breakout
+add(L1, rbox(0.18,0.06,0.18,0.01), M.chip, -0.6,0.05,0.12);
+add(L1, rbox(0.52,0.14,0.26,0.025), M.lipo, 0.4,0.04,0.0); // LiPo battery (rectangular pouch)
+led(L1,AMBER,-0.6,0.085,-0.05,0.026);
+// on/off SLIDE switch on the side of the case — slide up = ON, down = OFF (floats with this level)
+add(L1, rbox(0.20,0.17,0.12,0.02), M.chip, 0.7,0.0,PZ/2-0.10);          // switch body (fills the hole, out the +z side)
+add(L1, rbox(0.15,0.15,0.04,0.01), M.usb, 0.7,0.0,PZ/2-0.03);           // metal faceplate
+add(L1, rbox(0.06,0.12,0.03,0.004), new THREE.MeshStandardMaterial({color:0x09090b,roughness:0.6}), 0.7,0.0,PZ/2-0.005); // vertical slide track
+const slideMat=new THREE.MeshStandardMaterial({color:0xd83a36,roughness:0.4,metalness:0.35});
+add(L1, rbox(0.085,0.06,0.06,0.012), slideMat, 0.7,0.04,PZ/2+0.015);    // slider nub — TOP half = ON
+
+// ===== L0 — Particle Boron (top) =====
+add(L0, rbox(1.57,0.07,0.66,0.012), M.boron, 0,0,0);                     // Particle Boron (~1.6x longer)
+add(L0, rbox(0.36,0.03,0.36,0.004), M.label, -0.30,0.04,0);  // QR label
+add(L0, rbox(1.57,0.04,0.05,0.006), M.gold, 0,0.035,0.30);
+add(L0, rbox(1.57,0.04,0.05,0.006), M.gold, 0,0.035,-0.30);
+// USB-C charging adaptor — short rigid adaptor from the Boron out through the case (floats with this level)
+const ucMat=new THREE.MeshStandardMaterial({color:0x26262b,roughness:0.5,metalness:0.45});
+add(L0, rbox(0.16,0.075,0.20,0.02), M.usb, 0.72,0.0,0);                  // USB-C connector on the Boron
+add(L0, rbox(0.46,0.15,0.26,0.02), ucMat, 1.0,0.0,0);                    // adaptor body — fills the hole, ends just outside the case
+add(L0, rbox(0.03,0.07,0.16,0.005), M.chip, 1.22,0.0,0);                 // USB-C port slot at the outer (charging) end
+led(L0,0x4a90ff,0.52,0.06,0.18);
+
+// ===== inter-board connections — female-to-female jumpers (appear on explode) =====
+const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+M.fem=new THREE.MeshStandardMaterial({color:0x141418,roughness:0.6,metalness:0.25});
+const femEnd=(parent)=>add(parent, rbox(0.075,0.05,0.055,0.012), M.fem, 0,0,0);
+// (a) ADS <-> ADS: short female jumpers on the FSR board (static, child of L2)
+function shortJumper(a,b,color,bow){
+  const mid=a.clone().add(b).multiplyScalar(0.5); mid.y+=bow;
+  const tube=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([a,mid,b]),20,0.014,8,false),new THREE.MeshStandardMaterial({color,roughness:0.45}));
+  tube.castShadow=true; L2.add(tube); for(const p of [a,b]) femEnd(L2).position.copy(p);
+}
+shortJumper(V(-0.2,0.13,-0.12),V(0.2,0.13,-0.12),0xf0c040,0.10);  // SDA (yellow)
+shortJumper(V(-0.2,0.13,0.10),V(0.2,0.13,0.10),0x4aa3ff,0.10);    // SCL (blue)
+// (b) dynamic cross-layer female-to-female connections
+const connections=new THREE.Group(); dev.add(connections); const dyna=[];
+function dynaConn(fl,flo,tl,tlo,color){
+  const mat=new THREE.MeshStandardMaterial({color,roughness:0.45,transparent:true,opacity:0});
+  const tube=new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(V(0,0,0),V(0,1,0)),2,0.014,8,false),mat);
+  tube.castShadow=true; connections.add(tube);
+  dyna.push({fl,flo,tl,tlo,mat,tube,e1:femEnd(connections),e2:femEnd(connections)});
+}
+dynaConn(L2,V(0.46,0.14,-0.26), L1,V(-0.7,0.08,-0.13), 0x39d36a);  // ADS → gyroscope (taps the back edge)
+dynaConn(L1,V(-0.5,0.08,-0.13), L0,V(-0.34,0.07,-0.3), 0xeceff2);  // gyroscope → Boron (taps the back edge)
+dynaConn(L0,V(0.5,0.07,0.18),   L1,V(0.63,-0.05,0.62), 0xd83a36);  // Boron → slide-switch terminal
+dynaConn(L1,V(0.77,-0.05,0.62), L1,V(0.5,0.1,0.0),     0xd83a36);  // slide-switch terminal → battery
+let lastEp=-1;
+function updateConns(){
+  for(const c of dyna){
+    const aw=V(c.flo.x,c.fl.position.y+c.flo.y,c.flo.z), bw=V(c.tlo.x,c.tl.position.y+c.tlo.y,c.tlo.z);
+    const dy=Math.abs(aw.y-bw.y); let pts;
+    if(dy>0.45){
+      // cross-layer: leave each connector straight up/down, traverse the open gap between layers
+      const lo=aw.y<=bw.y?aw:bw, hi=aw.y<=bw.y?bw:aw, g=hi.y-lo.y;
+      const a=lo.clone(); a.y=lo.y+g*0.32;     // rises vertically off the lower connector
+      const b=hi.clone(); b.y=lo.y+g*0.68;      // drops vertically into the upper connector
+      pts=[lo,a,b,hi];
+    }else{
+      // same layer: small hump up-and-over so it clears the parts on this level
+      const a=aw.clone(); a.y+=0.13;
+      const m=aw.clone().lerp(bw,0.5); m.y+=0.2; m.z+=0.16;
+      const b=bw.clone(); b.y+=0.13;
+      pts=[aw,a,m,b,bw];
+    }
+    c.tube.geometry.dispose();
+    c.tube.geometry=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),40,0.014,8,false);
+    c.e1.position.copy(aw); c.e2.position.copy(bw);
+    const vis=Math.max(0,Math.min(1,(ep-0.25)/0.6)); c.mat.opacity=vis;
+    c.tube.visible=c.e1.visible=c.e2.visible=vis>0.02;
+  }
+}
+
+// ===== explode state =====
+const ASSM={L2:0.14,L1:0.30,L0:0.44}, EXPL={L2:1.05,L1:1.78,L0:2.52};
+let ep=0, epTarget=0;
+// embedded hero starts open (auto-reveals the teardown); standalone starts closed
+if(new URLSearchParams(location.search).has('open')) epTarget=1;
+function setLayers(p){const e=p*p*(3-2*p);
+  L2.position.y=ASSM.L2+(EXPL.L2-ASSM.L2)*e;
+  L1.position.y=ASSM.L1+(EXPL.L1-ASSM.L1)*e;
+  L0.position.y=ASSM.L0+(EXPL.L0-ASSM.L0)*e;
+  controls.target.y=0.4+(1.35-0.4)*e;
+}
+setLayers(0);
+
+const labelEls=[document.getElementById('l0'),document.getElementById('l1'),document.getElementById('l2'),document.getElementById('l3')];
+const anchors=[()=>[PX/2-0.05,L0.position.y+0.1,0],()=>[PX/2-0.05,L1.position.y+0.16,0],()=>[PX/2-0.05,L2.position.y+0.12,0],()=>[PX/2-0.05,0.28,0]];
+
+// ===== interaction =====
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2(); let down=null;
+const pick=(ev)=>{const r=renderer.domElement.getBoundingClientRect();ndc.x=((ev.clientX-r.left)/r.width)*2-1;ndc.y=-((ev.clientY-r.top)/r.height)*2+1;ray.setFromCamera(ndc,camera);return ray.intersectObjects(dev.children,true);};
+renderer.domElement.addEventListener('pointerdown',e=>down={x:e.clientX,y:e.clientY,t:performance.now()});
+renderer.domElement.addEventListener('pointerup',e=>{if(!down)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y),dt=performance.now()-down.t;down=null;if(moved>6||dt>450)return;if(pick(e).length)epTarget=epTarget>0.5?0:1;});
+let hover=false;
+renderer.domElement.addEventListener('pointermove',e=>{const over=pick(e).some(h=>{let o=h.object;while(o){if(o.userData&&o.userData.screw)return true;o=o.parent;}return false;});if(over!==hover){hover=over;renderer.domElement.style.cursor=over?'pointer':'grab';}});
+
+const composer=new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene,camera));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(W(),H()),0.42,0.55,0.9));
+addEventListener('resize',()=>{camera.aspect=W()/H();camera.updateProjectionMatrix();renderer.setSize(W(),H());composer.setSize(W(),H());});
+window.__mod={explode:()=>epTarget=1,collapse:()=>epTarget=0,controls,camera,get ep(){return ep;}};
+
+const hinttext=document.getElementById('hinttext'), clock=new THREE.Clock(), tmp=new THREE.Vector3();
+let active=true, raf=0;
+window.__mod.setActive=(v)=>{ if(v){ if(!raf){active=true; animate();} } else { active=false; } };
+function animate(){ if(!active){raf=0;return;} raf=requestAnimationFrame(animate); const t=clock.getElapsedTime();
+  ep+=(epTarget-ep)*0.08; if(Math.abs(ep-epTarget)<0.001)ep=epTarget; setLayers(ep);
+  const moved=Math.abs(ep-lastEp)>1e-4; lastEp=ep; if(moved)updateConns();
+  for(const l of leds)l.m.material.emissiveIntensity=l.b*(0.7+0.3*Math.sin(t*3+l.ph));
+  controls.autoRotateSpeed=0.7+ep*0.8;
+  labelEls.forEach((el,i)=>{const a=anchors[i]();tmp.set(a[0],a[1],a[2]).project(camera);
+    el.style.left=(tmp.x*0.5+0.5)*W()+'px';el.style.top=(-tmp.y*0.5+0.5)*H()+'px';
+    el.style.opacity=(ep>0.6&&tmp.z<1)?(ep-0.6)/0.4:0;});
+  hinttext.textContent=ep>0.5?'drag to rotate · click to close':'click a screw to open';
+  controls.update(); composer.render();
+}
+animate();
+</script>
+</body>
+</html>
