@@ -202,6 +202,21 @@
   .step .t{font-family:var(--disp);font-weight:700;font-size:21px;margin:8px 0 8px;letter-spacing:-.01em}
   .step .d{color:var(--dim);font-size:14px;line-height:1.55}
   .step .ms{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:12px}
+  /* pipeline signal-flow graphic */
+  .flowmap{margin-top:clamp(46px,8vw,104px)}
+  .flowmap .track{position:relative;height:62px;margin:0 4%}
+  .flowmap .line{position:absolute;left:31px;right:31px;top:50%;height:2px;transform:translateY(-50%);border-radius:2px;background:linear-gradient(90deg,var(--line),var(--faint),var(--line))}
+  .flowmap .pulse{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:4px;pointer-events:none}
+  .flowmap .pulse i{position:absolute;top:0;width:120px;height:4px;border-radius:4px;background:linear-gradient(90deg,transparent,var(--signal) 45%,var(--amber),transparent);box-shadow:0 0 16px var(--signal);animation:flow 2.8s linear infinite}
+  @keyframes flow{0%{left:-60px;opacity:0}10%{opacity:1}90%{opacity:1}100%{left:calc(100% - 60px);opacity:0}}
+  .flowmap .nodes{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center}
+  .fnode{position:relative;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:1px solid var(--line);color:var(--dim);animation:nodeglow 2.8s linear infinite}
+  .fnode svg{width:25px;height:25px}
+  .fnode.n1{animation-delay:.15s}.fnode.n2{animation-delay:.88s}.fnode.n3{animation-delay:1.62s}.fnode.n4{animation-delay:2.35s}
+  @keyframes nodeglow{0%,17%,100%{color:var(--dim);border-color:var(--line);box-shadow:none}5%{color:var(--ink);border-color:var(--signal);box-shadow:0 0 26px -6px var(--signal)}}
+  .flowcap{text-align:center;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-top:26px}
+  .flowcap b{color:var(--signal);font-weight:500}
+  @media(max-width:560px){.flowmap .track{margin:0;height:52px}.fnode{width:48px;height:48px}.fnode svg{width:21px;height:21px}.flowmap .line{left:26px;right:26px}}
 
   /* 7. COMPARE */
   .vs{display:grid;grid-template-columns:1fr 1fr 1.12fr;gap:16px;margin-top:46px;align-items:stretch}
@@ -276,6 +291,7 @@
   @media(prefers-reduced-motion:reduce){
     .reveal{transition:none;opacity:1;transform:none}
     .live i{animation:none}*{scroll-behavior:auto}
+    .flowmap .pulse{display:none}.fnode{animation:none}
   }
 </style>
 </head>
@@ -427,6 +443,19 @@
     <div class="step"><div class="num">SCORED</div><div class="t">The model</div><div class="d">The impact is scored against the athlete's own concussion-risk curve.</div><div class="ms">t ≈ 20 ms</div></div>
     <div class="step"><div class="num">UPLINKED</div><div class="t">The cloud</div><div class="d">Flagged events stream off the sideline over the cellular link.</div><div class="ms">t ≈ 40 ms</div></div>
     <div class="step"><div class="num">ALERTED</div><div class="t">The call</div><div class="d">A plain-language alert lands on your phone — and the coach's — before the next play.</div><div class="ms">t &lt; 50 ms</div></div>
+  </div>
+  <div class="flowmap reveal" aria-hidden="true">
+    <div class="track">
+      <div class="line"></div>
+      <div class="pulse"><i></i></div>
+      <div class="nodes">
+        <div class="fnode n1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M12 3.5v2.5M12 18v2.5M3.5 12h2.5M18 12h2.5M6.2 6.2l1.8 1.8M16 16l1.8 1.8M17.8 6.2 16 8M8 16l-1.8 1.8"/></svg></div>
+        <div class="fnode n2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h3.5l2-6.5L11 18l2.2-9 1.8 5.5 1.5-2H22"/></svg></div>
+        <div class="fnode n3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5a4 4 0 0 1-.3-8 5.2 5.2 0 0 1 10-1.2 3.6 3.6 0 0 1 .3 7.2"/><path d="M12 21v-7M9.2 16.2 12 13.4l2.8 2.8"/></svg></div>
+        <div class="fnode n4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5a6 6 0 0 1 12 0c0 4.5 1.8 5.5 2 5.8H4c.2-.3 2-1.3 2-5.8Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></div>
+      </div>
+    </div>
+    <div class="flowcap">Impact to alert · <b>under 50 ms</b></div>
   </div>
 </div></section>
 
