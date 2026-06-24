@@ -589,7 +589,7 @@
       statusEl=document.getElementById('status'), neck=document.getElementById('neck'), neckVal=document.getElementById('neckVal');
   var lastA=0, lastAlpha=0;
 
-  function neckLabel(v){ return v<20?'elite':v<40?'strong':v<62?'average':v<82?'developing':'youth'; }
+  function neckLabel(v){ return v<20?'youth':v<40?'developing':v<62?'average':v<82?'strong':'pro'; }
   neck.addEventListener('input', function(){ neckVal.textContent=neckLabel(+neck.value); if(lastA) render(lastA,lastAlpha,false); });
 
   function animateNum(el, to, unit){
