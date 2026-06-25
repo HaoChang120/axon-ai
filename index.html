@@ -183,7 +183,11 @@
   .eq{margin:46px auto 8px;max-width:760px;background:linear-gradient(180deg,rgba(24,20,16,.7),rgba(10,8,7,.55));
     border:1px solid var(--line);border-radius:18px;padding:34px 26px;position:relative}
   .eq .cap{position:absolute;top:-11px;left:24px;background:var(--bg2);padding:0 10px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--faint)}
-  .eq .formula{font-family:var(--serif);font-size:clamp(26px,4.4vw,42px);line-height:1.3;letter-spacing:.01em}
+  .eq{cursor:default}
+  .eq .formula{font-family:var(--serif);font-size:clamp(26px,4.4vw,42px);line-height:1.3;letter-spacing:.01em;filter:blur(4.5px);opacity:.58;transition:filter .45s ease,opacity .45s ease;user-select:none}
+  .eq:hover .formula,.eq:focus-within .formula{filter:blur(0);opacity:1;user-select:text}
+  .eq::after{content:"hover to reveal";position:absolute;left:0;right:0;top:55%;transform:translateY(-50%);text-align:center;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);pointer-events:none;opacity:.9;transition:opacity .3s}
+  .eq:hover::after,.eq:focus-within::after{opacity:0}
   .eq .formula .v{color:var(--signal)}
   .eq .formula sub{font-size:.5em;font-family:var(--mono);vertical-align:sub}
   .eq .formula sup{font-size:.55em}
@@ -203,7 +207,7 @@
   .step .d{color:var(--dim);font-size:14px;line-height:1.55}
   .step .ms{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:12px}
   /* pipeline signal-flow graphic */
-  .flowmap{margin-top:clamp(46px,8vw,104px)}
+  .flowmap{margin-top:clamp(24px,3.5vw,44px)}
   .flowmap .track{position:relative;height:62px;margin:0 4%}
   .flowmap .line{position:absolute;left:31px;right:31px;top:50%;height:2px;transform:translateY(-50%);border-radius:2px;background:linear-gradient(90deg,var(--line),var(--faint),var(--line))}
   .flowmap .pulse{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:4px;pointer-events:none}
@@ -293,6 +297,18 @@
     .live i{animation:none}*{scroll-behavior:auto}
     .flowmap .pulse{display:none}.fnode{animation:none}
   }
+  /* hidden easter egg — type "axon" */
+  .egg{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(8,6,5,.92);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .5s}
+  .egg.show{opacity:1;pointer-events:auto}
+  .eggcard{max-width:680px;margin:24px;padding:clamp(28px,5vw,48px);text-align:center;background:linear-gradient(180deg,rgba(24,20,16,.92),rgba(10,8,7,.88));border:1px solid var(--line);border-radius:20px;box-shadow:0 40px 90px -30px #000;transform:translateY(16px) scale(.98);transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+  .egg.show .eggcard{transform:none}
+  .eggeyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--signal)}
+  .eggformula{font-family:var(--serif);font-size:clamp(26px,4.4vw,40px);line-height:1.3;margin:24px 0 16px}
+  .eggformula .v{color:var(--signal)}.eggformula sub{font-size:.5em;font-family:var(--mono);vertical-align:sub}.eggformula sup{font-size:.55em}
+  .eggcoef{font-family:var(--mono);font-size:13px;color:var(--ink)}
+  .eggnote{color:var(--dim);font-size:15px;line-height:1.6;margin:22px auto 0;max-width:48ch}
+  .eggsig{font-family:var(--serif);font-style:italic;font-size:22px;color:var(--ink);margin-top:18px}
+  .eggclose{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--faint);margin-top:24px}
 </style>
 </head>
 <body>
@@ -420,7 +436,7 @@
   <h2 class="head" style="margin-top:16px">Not a threshold. <span class="it">A probability.</span></h2>
   <p class="lead">A single g-force cutoff is wrong for almost everyone. Axon scores each impact as a probability of concussion, then bends that curve to the individual athlete — the part that's hard to copy.</p>
 
-  <div class="eq">
+  <div class="eq" tabindex="0">
     <div class="cap">COMBINED PROBABILITY OF CONCUSSION · ROWSON &amp; DUMA, 2013</div>
     <div class="formula"><span class="v">R</span> = 1 / (1 + <i>e</i><sup>−(β<sub>0</sub> + β<sub>1</sub>a + β<sub>2</sub>α + β<sub>3</sub>aα)</sup>)</div>
     <div class="note"><b>a</b> = peak linear acceleration (g) &nbsp;·&nbsp; <b>α</b> = peak rotational acceleration (rad/s²) &nbsp;·&nbsp; the interaction term aα is what single-axis sensors miss</div>
@@ -521,6 +537,29 @@
   <div class="msg" id="msg" role="status"></div>
 </div></section>
 
+<!-- hidden easter egg: type "axon" anywhere -->
+<div class="egg" id="egg" aria-hidden="true"><div class="eggcard">
+  <div class="eggeyebrow">◉ Classified · the real math</div>
+  <div class="eggformula"><span class="v">R</span> = 1 / (1 + <i>e</i><sup>−(β<sub>0</sub> + β<sub>1</sub>a + β<sub>2</sub>α + β<sub>3</sub>aα)</sup>)</div>
+  <div class="eggcoef">β₀ = −10.2 &nbsp;·&nbsp; β₁ = 0.0433 &nbsp;·&nbsp; β₂ = 0.000873 &nbsp;·&nbsp; β₃ = −9.2 × 10⁻⁷</div>
+  <div class="eggnote">The published curve is only the start — the moat is bending it to each athlete: neck strength, head mass, sex, hydration. You found the hidden math.</div>
+  <div class="eggsig">— Hao Chang</div>
+  <div class="eggclose">press esc · or click anywhere to close</div>
+</div></div>
+<script>
+(function(){var egg=document.getElementById('egg'),buf='';
+  function open(){egg.classList.add('show');egg.setAttribute('aria-hidden','false');}
+  function close(){egg.classList.remove('show');egg.setAttribute('aria-hidden','true');}
+  addEventListener('keydown',function(e){
+    if(e.key==='Escape')return close();
+    var t=(e.target&&e.target.tagName)||'';if(t==='INPUT'||t==='TEXTAREA')return;
+    if(/^[a-zA-Z]$/.test(e.key)){buf=(buf+e.key.toLowerCase()).slice(-4);if(buf==='axon')open();}
+  });
+  egg.addEventListener('click',close);
+  try{console.log('%cAXON','color:#ee5a2a;font:800 40px Georgia,serif');
+  console.log('%cpsst — type "axon" anywhere on the page.','color:#a99e8c;font:13px ui-monospace,monospace');}catch(e){}
+})();
+</script>
 <footer><div class="in">
   <div class="brand">
     <svg viewBox="0 0 48 24" aria-hidden="true"><g fill="none" stroke="var(--signal)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
