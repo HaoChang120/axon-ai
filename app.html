@@ -511,7 +511,7 @@ input{font-family:var(--disp)}
     <!-- ========= CHAT ========= -->
     <section class="view" id="chat">
       <div class="chat-header">
-        <div class="ch-back" onclick="go(role==='coach'?'team':'home')"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="ch-back" onclick="go(state.role==='coach'?'team':'home')"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <div class="ch-av">MT</div>
         <div style="flex:1"><div class="ch-name">Mike Torres</div><div class="ch-status"><span class="live-dot"></span> Athletic Trainer · online</div></div>
       </div>
@@ -760,7 +760,8 @@ function goBack(){const p=navStack.pop()||(state.role==='coach'?'team':'home');g
 function togglePw(){const i=$("#pw");i.type=i.type==='password'?'text':'password';}
 function doLogin(){const b=$("#loginBtn");b.classList.add('loading');
   setTimeout(()=>{b.classList.remove('loading');buildChart();autoReconnect();go(state.role==='coach'?'team':'home');},850);}
-function signOut(){stop();state.gameOn=false;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active','exit-left'));
+function signOut(){stop();state.gameOn=false;resetGameBtn();$("#sparkcard").classList.remove('show');navStack=[];setConn('off','Helmet not paired');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active','exit-left'));
   $("#login").classList.add('active');cur='login';$("#tabbar").style.display='none';$("#loginBtn").classList.remove('loading');toast('Signed out');}
 
 /* ===== risk ring + vitals render ===== */
@@ -813,15 +814,18 @@ function connectLive(){
   if(!state.token){openSheet();return;}
   setConn('','Connecting…');
   fetch(`${API}/v1/devices/${state.device}?access_token=${encodeURIComponent(state.token)}`)
-    .then(r=>r.json()).then(j=>{if(j.error){toast('Token/device error: '+j.error);}
-      else{$("#devSub").textContent=`${j.name||'device'} · ${j.online?'online':'offline'} · OS ${j.system_firmware_version||'?'}`;}}).catch(()=>{});
+    .then(r=>r.json()).then(j=>{if(j.error){toast('Token/device error: '+j.error);setConn('off','Pairing failed — check token');}
+      else{$("#devSub").textContent=`${j.name||'device'} · ${j.online?'online':'offline'} · OS ${j.system_firmware_version||'?'}`;
+        if(!j.online){setConn('off','Helmet paired · offline');toast('Helmet is offline — power it on to see live data');}}}).catch(()=>{});
   const es=new EventSource(`${API}/v1/devices/${encodeURIComponent(state.device)}/events/?access_token=${encodeURIComponent(state.token)}`);
   state.es=es;
   es.addEventListener('open',()=>{state.retry=0;setConn('live','Live · LTE · Axon_Main_Module');toast('Paired with your helmet');});
   es.addEventListener('impact_data',e=>{try{render(JSON.parse(JSON.parse(e.data).data));}catch(_){}});
   es.addEventListener('concussion_alert',e=>{try{fireAlert(JSON.parse(JSON.parse(e.data).data));}catch(_){fireAlert({g:0,angAccel:0});}});
   es.addEventListener('AXON',e=>{try{toast('Helmet: '+JSON.parse(e.data).data);}catch(_){}});
-  es.addEventListener('error',()=>{setConn('','Reconnecting…');state.retry++;if(state.retry===3)toast('Stream dropped — check token / device online');});
+  es.addEventListener('error',()=>{state.retry++;
+    if(state.retry>=4){stop();setConn('off','Stream stopped — check token / device');toast('Could not stream — verify token and that the helmet is online');}
+    else setConn('','Reconnecting…');});
 }
 /* ===== demo simulation ===== */
 function connectDemo(){
@@ -837,22 +841,25 @@ function connectDemo(){
   },1000);
 }
 function stop(){if(state.es){state.es.close();state.es=null;}if(state.gameTimer){clearInterval(state.gameTimer);state.gameTimer=null;}}
-function autoReconnect(){ if(state.token){$("#devSub").textContent='Axon_Main_Module · tap to pair';} }
+/* if a token is already saved, start monitoring the moment the app opens */
+function autoReconnect(){ if(state.token){$("#devSub").textContent='Axon_Main_Module · paired';state.retry=0;connectLive();} }
 
 /* ===== Start Game ===== */
+function setGameBtnLive(){const b=$("#gameBtn");if(b.classList.contains('live'))return;
+  b.classList.add('live');b.querySelector('svg')?.remove();
+  if(!b.querySelector('.rec'))b.insertAdjacentHTML('afterbegin','<div class="rec"></div>');
+  $("#gameLabel").textContent='Game Live · Recording';}
+function resetGameBtn(){const b=$("#gameBtn");b.classList.remove('live');b.querySelector('.rec')?.remove();
+  if(!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin','<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4l11 6-11 6V4z"/></svg>');
+  $("#gameLabel").textContent='Start Game';}
 function toggleGame(){
   state.gameOn=!state.gameOn;
-  const b=$("#gameBtn"),l=$("#gameLabel");
   if(state.gameOn){
-    b.classList.add('live');b.querySelector('svg').outerHTML='<div class="rec"></div>';l.textContent='Game Live · Recording';
-    $("#sparkcard").classList.add('show');state.series=[];
+    setGameBtnLive();$("#sparkcard").classList.add('show');state.series=[];
     if(state.token){connectLive();toast('Recording — streaming from your Boron');}
     else{connectDemo();toast('No token yet — running demo. Pair in Profile → Device.');}
   }else{
-    b.classList.remove('live');b.querySelector('.rec')?.remove();
-    b.insertAdjacentHTML('afterbegin','<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4l11 6-11 6V4z"/></svg>');
-    l.textContent='Start Game';$("#sparkcard").classList.remove('show');
-    stop();setConn('off','Helmet idle');
+    resetGameBtn();$("#sparkcard").classList.remove('show');stop();setConn('off','Helmet idle');
   }
 }
 
@@ -863,10 +870,9 @@ function pairConnect(){const t=$("#inToken").value.trim(),d=$("#inDevice").value
   if(!t){toast('Paste an access token first');return;}
   state.token=t;state.device=d;localStorage.setItem('axon_token',t);localStorage.setItem('axon_device',d);
   $("#devSub").textContent='Axon_Main_Module · paired';closeSheet();
-  if(!state.gameOn){state.gameOn=true;$("#gameBtn").classList.add('live');$("#gameBtn").querySelector('svg')?.remove();
-    $("#gameBtn").insertAdjacentHTML('afterbegin','<div class="rec"></div>');$("#gameLabel").textContent='Game Live · Recording';$("#sparkcard").classList.add('show');}
+  state.gameOn=true;setGameBtnLive();$("#sparkcard").classList.add('show');state.series=[];
   connectLive();}
-function pairDemo(){closeSheet();if(!state.gameOn)toggleGame();else connectDemo();}
+function pairDemo(){closeSheet();state.gameOn=true;setGameBtnLive();$("#sparkcard").classList.add('show');state.series=[];connectDemo();}
 
 /* ===== chart ===== */
 function buildChart(){const c=$("#chart");c.querySelectorAll('.bar-col').forEach(e=>e.remove());
@@ -955,7 +961,7 @@ function renderTeam(){$("#roster").innerHTML=players.map((p,i)=>`
     <div><div class="pr-name">${p.name}</div><div class="pr-meta">${p.on?'<span class="live-dot"></span> Online · ':'Offline · '}${p.pos}</div></div>
     <div class="mini-gauge ${p.lvl}"><b>${p.risk}%</b><span>risk</span></div></div>`).join('');
   $("#onlineCount").textContent=players.filter(p=>p.on).length;}
-function startAll(){const b=$("#allBtn");b.classList.add('live');b.querySelector('svg').outerHTML='<div class="rec"></div>';
+function startAll(){const b=$("#allBtn");if(b.classList.contains('live'))return;b.classList.add('live');b.querySelector('svg').outerHTML='<div class="rec"></div>';
   b.querySelector('span').textContent='All Games Live';toast('Monitoring '+players.filter(p=>p.on).length+' players live');}
 
 /* ===== chat ===== */
