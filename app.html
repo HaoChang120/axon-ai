@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Axon">
+<meta name="theme-color" content="#100d0a">
+<title>Axon — Live Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12,200..800;48,200..800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#100d0a; --bg2:#0a0807; --panel:#181410; --panel2:#1f1913;
+    --ink:#f5eee1; --dim:#a99e8c; --faint:#6b6253;
+    --line:rgba(245,238,225,.10); --line2:rgba(245,238,225,.055);
+    --signal:#ee5a2a; --amber:#f2a44c; --alert:#ff3b46; --good:#9bbf7e;
+    --disp:"Bricolage Grotesque",-apple-system,system-ui,sans-serif;
+    --serif:"Instrument Serif",Georgia,serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+    --safe-top:env(safe-area-inset-top,0px); --safe-bot:env(safe-area-inset-bottom,0px);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--disp);font-weight:400;
+    -webkit-font-smoothing:antialiased;letter-spacing:-.01em;overflow:hidden}
+  .mono{font-family:var(--mono);font-feature-settings:"tnum"}
+  .serif{font-family:var(--serif)} .it{font-family:var(--serif);font-style:italic}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input{font-family:var(--mono);font-size:14px}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:var(--signal)}
+  #app{width:min(460px,100vw);height:100dvh;margin:0 auto;position:relative;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;
+    box-shadow:0 0 0 1px rgba(255,255,255,.03), 0 40px 120px -30px rgba(0,0,0,.9)}
+
+  /* ---------- top bar ---------- */
+  .top{padding:calc(var(--safe-top) + 14px) 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line2);background:linear-gradient(180deg,rgba(16,13,10,.9),rgba(16,13,10,.55));z-index:5}
+  .brand{display:flex;align-items:center;gap:9px;font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:-.02em}
+  .brand svg{width:30px;height:15px;color:var(--signal);overflow:visible}
+  .status{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);box-shadow:0 0 0 0 rgba(0,0,0,0);transition:.3s}
+  .dot.live{background:var(--good);animation:pulse 1.6s infinite}
+  .dot.demo{background:var(--amber);animation:pulse 1.6s infinite}
+  .dot.err{background:var(--alert)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 currentColor;opacity:1}70%{box-shadow:0 0 0 7px transparent;opacity:.6}100%{opacity:1}}
+
+  /* ---------- scroll body ---------- */
+  .body{flex:1;overflow-y:auto;overflow-x:hidden;padding:18px 18px calc(var(--safe-bot) + 26px);-webkit-overflow-scrolling:touch}
+  .body::-webkit-scrollbar{width:0}
+
+  /* ---------- primary risk gauge ---------- */
+  .hero{position:relative;border:1px solid var(--line);border-radius:22px;background:radial-gradient(120% 120% at 50% 0,var(--panel),var(--bg2));padding:22px 20px 20px;overflow:hidden}
+  .hero.alert{border-color:rgba(255,59,70,.55);background:radial-gradient(120% 120% at 50% 0,rgba(255,59,70,.14),var(--bg2));animation:flash 1s ease}
+  @keyframes flash{0%,100%{box-shadow:0 0 0 0 transparent}30%{box-shadow:0 0 44px -6px rgba(255,59,70,.6)}}
+  .hero .cap{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .risk-n{font-family:var(--disp);font-weight:800;font-size:clamp(62px,20vw,92px);line-height:.86;letter-spacing:-.045em;transition:color .35s}
+  .risk-n small{font-family:var(--mono);font-size:26px;font-weight:500;color:var(--dim);letter-spacing:0;margin-left:2px}
+  .risk-lbl{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--dim);margin-top:2px}
+  .risk-bar{margin-top:14px;height:7px;border-radius:6px;background:var(--panel2);overflow:hidden}
+  .risk-fill{height:100%;width:2%;border-radius:6px;background:linear-gradient(90deg,var(--good),var(--amber),var(--signal),var(--alert));transition:width .35s}
+
+  /* ---------- metric trio ---------- */
+  .trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+  .metric{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:13px 12px}
+  .metric .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+  .metric .v{font-family:var(--disp);font-weight:700;font-size:27px;line-height:1.05;margin-top:5px;letter-spacing:-.02em;transition:color .2s}
+  .metric .v small{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--dim);letter-spacing:0}
+  .metric.hot .v{color:var(--signal)}
+
+  /* ---------- helmet pad map ---------- */
+  .card{margin-top:14px;border:1px solid var(--line);border-radius:18px;background:var(--panel);padding:16px}
+  .card .ch{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .card .ch .t{font-family:var(--disp);font-weight:600;font-size:14px}
+  .card .ch .s{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .helmet{position:relative;height:158px;display:flex;align-items:center;justify-content:center}
+  .helmet svg{height:150px;width:auto;overflow:visible}
+  .pad{fill:var(--panel2);stroke:var(--line);stroke-width:1.4;transition:fill .25s,stroke .25s}
+  .pad.on{fill:var(--signal);stroke:var(--amber)}
+  .pad.hot{fill:var(--alert);stroke:#ff8a90}
+  .padlbl{fill:var(--faint);font-family:var(--mono);font-size:9px;letter-spacing:.05em}
+
+  /* ---------- sparkline ---------- */
+  .spark{width:100%;height:64px;display:block}
+  .spark path{fill:none;stroke:var(--signal);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+  .spark .thresh{stroke:rgba(255,59,70,.4);stroke-width:1;stroke-dasharray:3 4}
+
+  /* ---------- event log ---------- */
+  .log{margin-top:6px;max-height:230px;overflow-y:auto}
+  .log::-webkit-scrollbar{width:0}
+  .ev{display:flex;gap:11px;padding:10px 2px;border-bottom:1px solid var(--line2)}
+  .ev:last-child{border-bottom:none}
+  .ev .ei{width:26px;height:26px;border-radius:8px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:var(--panel2);font-size:13px}
+  .ev.alert .ei{background:rgba(255,59,70,.16);color:var(--alert)}
+  .ev.boot .ei{background:rgba(155,191,126,.14);color:var(--good)}
+  .ev .em{flex:1;min-width:0}
+  .ev .et{font-size:13px;font-weight:500;line-height:1.3}
+  .ev .es{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:2px}
+  .ev .ex{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:right;white-space:nowrap}
+  .empty{text-align:center;color:var(--faint);font-family:var(--serif);font-style:italic;font-size:15px;padding:26px 0}
+
+  /* ---------- buttons ---------- */
+  .row{display:flex;gap:10px;margin-top:14px}
+  .btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--disp);font-weight:600;font-size:14px;padding:14px 16px;border-radius:13px;transition:.18s}
+  .btn.solid{background:var(--signal);color:#160a05;box-shadow:0 10px 30px -14px var(--signal)}
+  .btn.solid:active{transform:translateY(1px)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:active{background:var(--panel)}
+  .btn.sm{padding:10px 14px;font-size:12.5px}
+
+  /* ---------- pairing / setup screen ---------- */
+  .screen{position:absolute;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;padding:calc(var(--safe-top) + 30px) 24px calc(var(--safe-bot) + 24px);overflow-y:auto}
+  .screen.hidden{display:none}
+  .setup-hero{margin-top:8px}
+  .setup-hero h1{font-family:var(--disp);font-weight:700;font-size:34px;line-height:1;letter-spacing:-.035em;margin:14px 0 8px}
+  .setup-hero h1 .it{color:var(--signal)}
+  .setup-hero p{color:var(--dim);font-size:15px;line-height:1.5;max-width:34ch}
+  .field{margin-top:18px}
+  .field label{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+  .field input{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;color:var(--ink);outline:none;transition:border .2s}
+  .field input:focus{border-color:var(--signal)}
+  .hint{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:7px;line-height:1.5}
+  .hint a{color:var(--amber);text-decoration:none}
+  .steps{margin-top:16px;border:1px solid var(--line2);border-radius:14px;background:var(--panel);padding:15px 16px}
+  .steps .st{display:flex;gap:11px;padding:7px 0;font-size:13px;color:var(--dim);line-height:1.45}
+  .steps .st b{color:var(--ink);font-weight:600}
+  .steps .num{flex:0 0 auto;width:20px;height:20px;border-radius:6px;background:var(--panel2);color:var(--signal);font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .spacer{flex:1}
+  .fine{text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:16px}
+
+  /* ---------- alert overlay ---------- */
+  .alertlay{position:absolute;inset:0;z-index:40;background:radial-gradient(120% 100% at 50% 30%,rgba(255,59,70,.28),rgba(10,8,7,.96));display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;opacity:0;pointer-events:none;transition:opacity .25s}
+  .alertlay.show{opacity:1;pointer-events:auto}
+  .alertlay .ring{width:96px;height:96px;border-radius:50%;border:3px solid var(--alert);display:flex;align-items:center;justify-content:center;font-size:44px;animation:ring 1s infinite}
+  @keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(255,59,70,.5)}50%{box-shadow:0 0 0 22px transparent}}
+  .alertlay h2{font-family:var(--disp);font-weight:800;font-size:38px;letter-spacing:-.03em;margin:20px 0 6px;color:#fff}
+  .alertlay p{color:#ffd9dc;font-size:16px;max-width:30ch;line-height:1.4}
+  .alertlay .stat{font-family:var(--mono);font-size:13px;color:#ffb3b8;margin-top:18px;letter-spacing:.04em}
+
+  .toast{position:absolute;left:50%;bottom:calc(var(--safe-bot) + 22px);transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line);color:var(--ink);padding:11px 18px;border-radius:12px;font-size:13px;z-index:60;opacity:0;pointer-events:none;transition:.25s;white-space:nowrap;max-width:90%}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ TOP BAR ============ -->
+  <div class="top">
+    <div class="brand">
+      <svg viewBox="0 0 40 20" fill="none"><path d="M2 10h9l3-7 6 14 3-7h15" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      AXON
+    </div>
+    <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">Offline</span></div>
+  </div>
+
+  <!-- ============ DASHBOARD ============ -->
+  <div class="body" id="dash">
+    <div class="hero" id="hero">
+      <div class="cap"><span class="eyebrow">Concussion Probability</span><span class="mono" style="font-size:10.5px;color:var(--faint)" id="model">Rowson–Duma CP</span></div>
+      <div class="risk-n" id="riskN" style="color:var(--good)">0<small>%</small></div>
+      <div class="risk-lbl" id="riskLbl">All clear</div>
+      <div class="risk-bar"><div class="risk-fill" id="riskFill"></div></div>
+    </div>
+
+    <div class="trio">
+      <div class="metric" id="mG"><div class="k">Linear</div><div class="v" id="vG">0<small> g</small></div></div>
+      <div class="metric" id="mA"><div class="k">Angular</div><div class="v" id="vA">0<small> rad/s²</small></div></div>
+      <div class="metric" id="mF"><div class="k">Pad force</div><div class="v" id="vF">0<small></small></div></div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><span class="t">Impact location</span><span class="s" id="padId">no contact</span></div>
+      <div class="helmet">
+        <svg viewBox="0 0 200 150" aria-label="helmet pad map">
+          <!-- shell -->
+          <path d="M100 12c-40 0-66 26-66 62 0 20 8 34 20 42h92c12-8 20-22 20-42 0-36-26-62-66-62z" fill="none" stroke="var(--line)" stroke-width="1.5"/>
+          <!-- face mask hint -->
+          <path d="M40 96c14 8 46 12 60 12s46-4 60-12" fill="none" stroke="var(--line2)" stroke-width="1.4"/>
+          <!-- pads: front / left / right / rear -->
+          <rect class="pad" id="pad-front" x="78" y="20" width="44" height="26" rx="9"/>
+          <rect class="pad" id="pad-left"  x="40" y="52" width="30" height="40" rx="10"/>
+          <rect class="pad" id="pad-right" x="130" y="52" width="30" height="40" rx="10"/>
+          <rect class="pad" id="pad-rear"  x="78" y="70" width="44" height="30" rx="10"/>
+          <text class="padlbl" x="100" y="36" text-anchor="middle">FRONT</text>
+          <text class="padlbl" x="55" y="75" text-anchor="middle">L</text>
+          <text class="padlbl" x="145" y="75" text-anchor="middle">R</text>
+          <text class="padlbl" x="100" y="88" text-anchor="middle">REAR</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><span class="t">Linear g — last 40s</span><span class="s">threshold 70 g</span></div>
+      <svg class="spark" id="spark" viewBox="0 0 320 64" preserveAspectRatio="none">
+        <line class="thresh" id="threshLine" x1="0" x2="320" y1="18" y2="18"/>
+        <path id="sparkPath" d=""/>
+      </svg>
+    </div>
+
+    <div class="card">
+      <div class="ch"><span class="t">Event log</span><span class="s"><span id="evCount">0</span> events</span></div>
+      <div class="log" id="log"><div class="empty">Waiting for the first impact packet…</div></div>
+    </div>
+
+    <div class="row">
+      <button class="btn ghost sm" id="btnSettings">⚙ Pairing</button>
+      <button class="btn ghost sm" id="btnClear">Clear log</button>
+    </div>
+    <div class="fine" id="devFine"></div>
+  </div>
+
+  <!-- ============ PAIRING SCREEN ============ -->
+  <div class="screen" id="setup">
+    <div class="brand" style="font-size:15px"><svg viewBox="0 0 40 20" fill="none"><path d="M2 10h9l3-7 6 14 3-7h15" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>AXON</div>
+    <div class="setup-hero">
+      <span class="eyebrow">Pair your helmet</span>
+      <h1>Connect to <span class="it">Axon_Main_Module</span></h1>
+      <p>Your Boron streams every impact to the Particle Cloud over LTE. Paste an access token to watch it live, or run a demo with simulated hits.</p>
+    </div>
+
+    <div class="field">
+      <label>Particle access token</label>
+      <input id="inToken" type="password" placeholder="paste token…" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="hint">Get one at <a href="https://console.particle.io/settings/access-tokens" target="_blank" rel="noopener">console.particle.io → Access Tokens</a>, or run <span style="color:var(--dim)">particle token create</span>.</div>
+    </div>
+    <div class="field">
+      <label>Device ID</label>
+      <input id="inDevice" type="text" placeholder="device id" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="hint">Axon_Main_Module is pre-filled. Change it to pair a different helmet.</div>
+    </div>
+
+    <div class="steps">
+      <div class="st"><span class="num">1</span><div>Sign in to <b>console.particle.io</b> with your Google account (haochang164@gmail.com).</div></div>
+      <div class="st"><span class="num">2</span><div>Open the user menu → <b>Access Tokens</b> → <b>Create a new access token</b>, copy it.</div></div>
+      <div class="st"><span class="num">3</span><div>Paste it above and hit <b>Connect</b>. The app subscribes to your device's live event stream.</div></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="row">
+      <button class="btn solid" id="btnConnect">Connect helmet</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn ghost" id="btnDemo">Try demo mode</button>
+    </div>
+    <div class="fine">Token stays on this device (localStorage). Nothing is sent anywhere but Particle.</div>
+  </div>
+
+  <!-- ============ ALERT OVERLAY ============ -->
+  <div class="alertlay" id="alertlay">
+    <div class="ring">⚠</div>
+    <h2>Possible concussion</h2>
+    <p>High-severity impact detected. Pull the player and evaluate.</p>
+    <div class="stat" id="alertStat"></div>
+    <button class="btn ghost sm" id="btnDismiss" style="margin-top:26px;max-width:200px">Acknowledge</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   AXON live console — pairs with a Particle Boron over the
+   Particle Cloud Server-Sent-Events stream.
+
+   Firmware publishes:
+     event "impact_data"      data {"g":..,"angAccel":..,"fsr":..,"pad":"0x49/0","status":".."}
+     event "concussion_alert" data {"g":..,"angAccel":..}
+     event "AXON"             data "booting" | "IMU online" | "found N ADS1115 ..."
+   ============================================================ */
+
+const DEFAULT_DEVICE = "e00fce68baab0b648b3d9899"; // Axon_Main_Module
+const API = "https://api.particle.io";
+
+// Rowson & Duma 2013 Combined Probability of concussion
+const B0=-10.2, B1=0.0433, B2=0.000873, B3=-9.2e-7;
+function concussionProb(gLin, angAccel){
+  const z = B0 + B1*gLin + B2*angAccel + B3*gLin*angAccel;
+  return 1/(1+Math.exp(-z));
+}
+
+const $ = s => document.querySelector(s);
+const state = {
+  mode:null,          // "live" | "demo"
+  token:localStorage.getItem("axon_token")||"",
+  device:localStorage.getItem("axon_device")||DEFAULT_DEVICE,
+  es:null, demoTimer:null, retry:0,
+  series:[], events:[], peakG:0, alerted:0
+};
+
+/* ---------- UI helpers ---------- */
+let toastT;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2600); }
+function setStatus(kind, txt){
+  const d=$("#dot"); d.className="dot"+(kind?" "+kind:""); $("#statusTxt").textContent=txt;
+}
+function riskColor(p){
+  if(p>=0.5) return "var(--alert)";
+  if(p>=0.2) return "var(--signal)";
+  if(p>=0.05) return "var(--amber)";
+  return "var(--good)";
+}
+function riskWord(p){
+  if(p>=0.5) return "Critical — pull the player";
+  if(p>=0.2) return "Elevated risk";
+  if(p>=0.05) return "Monitor";
+  return "All clear";
+}
+
+/* ---------- render one telemetry packet ---------- */
+function render(d){
+  const g = +d.g||0, ang = +d.angAccel||0, fsr = +d.fsr||0;
+  const p = concussionProb(g, ang);
+  // risk gauge
+  $("#riskN").innerHTML = Math.round(p*100)+"<small>%</small>";
+  $("#riskN").style.color = riskColor(p);
+  $("#riskLbl").textContent = riskWord(p);
+  $("#riskFill").style.width = Math.max(2, Math.min(100, p*100)).toFixed(1)+"%";
+  $("#hero").classList.toggle("alert", d.status==="alert" || p>=0.5);
+  // metrics
+  $("#vG").innerHTML = g.toFixed(1)+"<small> g</small>";
+  $("#vA").innerHTML = Math.round(ang).toLocaleString()+"<small> rad/s²</small>";
+  $("#vF").innerHTML = fsr.toLocaleString()+"<small></small>";
+  $("#mG").classList.toggle("hot", g>=70);
+  $("#mA").classList.toggle("hot", ang>=4500);
+  $("#mF").classList.toggle("hot", fsr>=15000);
+  // pad map
+  paintPad(d.pad, g);
+  $("#padId").textContent = d.pad && d.pad!=="-" ? d.pad : "no contact";
+  // sparkline
+  pushSpark(g);
+}
+
+const PAD_MAP = { "0":"pad-front", "1":"pad-left", "2":"pad-right", "3":"pad-rear" };
+function paintPad(pad, g){
+  document.querySelectorAll(".pad").forEach(el=>el.classList.remove("on","hot"));
+  if(!pad || pad==="-") return;
+  // pad string looks like "0x49/2" -> channel decides location
+  const ch = pad.split("/")[1];
+  const id = PAD_MAP[ch] || "pad-front";
+  const el = document.getElementById(id);
+  if(el) el.classList.add(g>=70?"hot":"on");
+}
+
+function pushSpark(g){
+  state.series.push(g);
+  if(state.series.length>40) state.series.shift();
+  const s=state.series, n=s.length;
+  if(n<2){ $("#sparkPath").setAttribute("d",""); return; }
+  const W=320,H=64, max=Math.max(80, ...s); // scale to at least 80g so 70 line sits sensibly
+  const y=v=>H-2-(v/max)*(H-6);
+  $("#threshLine").setAttribute("y1", y(70)); $("#threshLine").setAttribute("y2", y(70));
+  let dpath="";
+  s.forEach((v,i)=>{ const x=(i/(n-1))*W; dpath+=(i?"L":"M")+x.toFixed(1)+" "+y(v).toFixed(1)+" "; });
+  $("#sparkPath").setAttribute("d", dpath);
+}
+
+/* ---------- event log ---------- */
+function logEvent(kind, title, sub, extra){
+  state.events.unshift({kind,title,sub,extra});
+  if(state.events.length>60) state.events.pop();
+  $("#evCount").textContent = state.events.length;
+  const log=$("#log");
+  if(state.events.length===1) log.innerHTML="";
+  const icon = kind==="alert"?"⚠":kind==="boot"?"●":"›";
+  const row=document.createElement("div");
+  row.className="ev "+kind;
+  row.innerHTML=`<div class="ei">${icon}</div><div class="em"><div class="et">${title}</div><div class="es">${sub}</div></div><div class="ex">${extra||""}</div>`;
+  log.insertBefore(row, log.firstChild);
+}
+function nowT(){ const d=new Date(); return d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}); }
+
+/* ---------- concussion alert ---------- */
+function fireAlert(d){
+  const g=+d.g||0, ang=+d.angAccel||0, p=concussionProb(g,ang);
+  $("#alertStat").textContent = `${g.toFixed(1)} g · ${Math.round(ang).toLocaleString()} rad/s² · ${Math.round(p*100)}% CP`;
+  $("#alertlay").classList.add("show");
+  if(navigator.vibrate) navigator.vibrate([200,90,200,90,400]);
+  logEvent("alert","Concussion alert", nowT(), `${g.toFixed(0)}g`);
+}
+$("#btnDismiss").onclick=()=>{ $("#alertlay").classList.remove("show"); if(navigator.vibrate)navigator.vibrate(0); };
+
+/* ---------- parse Particle SSE payloads ---------- */
+function onImpact(payload){
+  let d; try{ d=JSON.parse(payload.data); }catch(e){ return; }
+  render(d);
+  if(d.g>state.peakG){ state.peakG=d.g; }
+  if(d.status==="alert"){
+    logEvent("event", `Impact flagged`, nowT(), `${(+d.g).toFixed(0)}g`);
+  }
+}
+function onAlert(payload){
+  let d; try{ d=JSON.parse(payload.data); }catch(e){ d={g:0,angAccel:0}; }
+  fireAlert(d);
+}
+function onAxon(payload){
+  logEvent("boot", "Helmet: "+payload.data, nowT(), "");
+}
+
+/* ============================================================
+   LIVE MODE — Particle Cloud event stream (SSE)
+   GET /v1/devices/{id}/events/?access_token=...
+   ============================================================ */
+async function connectLive(){
+  stop();
+  state.mode="live";
+  if(!state.token){ openSetup(); return; }
+  setStatus("", "Connecting…");
+  // device online check (nice-to-have, non-blocking)
+  fetch(`${API}/v1/devices/${state.device}?access_token=${encodeURIComponent(state.token)}`)
+    .then(r=>r.json()).then(j=>{
+      if(j.error){ toast("Token/device error: "+j.error); }
+      else { $("#devFine").textContent = `${j.name||"device"} · ${j.online?"online":"offline"} · OS ${j.system_firmware_version||"?"}`; }
+    }).catch(()=>{});
+
+  const url = `${API}/v1/devices/${encodeURIComponent(state.device)}/events/?access_token=${encodeURIComponent(state.token)}`;
+  const es = new EventSource(url);
+  state.es = es;
+  es.addEventListener("open", ()=>{ state.retry=0; setStatus("live","Live · LTE"); toast("Paired with Axon_Main_Module"); });
+  es.addEventListener("impact_data", e=>onImpact(JSON.parse(e.data)));
+  es.addEventListener("concussion_alert", e=>onAlert(JSON.parse(e.data)));
+  es.addEventListener("AXON", e=>onAxon(JSON.parse(e.data)));
+  es.addEventListener("error", ()=>{
+    setStatus("err","Reconnecting…");
+    // EventSource auto-retries; if the token is bad it will loop — cap noise
+    state.retry++;
+    if(state.retry===3) toast("Stream dropped — check token / device online");
+  });
+}
+
+/* ============================================================
+   DEMO MODE — realistic simulated hits so the app works with
+   no hardware. Mostly light contact, occasional big hit.
+   ============================================================ */
+function connectDemo(){
+  stop();
+  state.mode="demo";
+  setStatus("demo","Demo · simulated");
+  toast("Demo mode — simulated impacts");
+  logEvent("boot","Helmet: demo stream started", nowT(), "");
+  let tick=0;
+  state.demoTimer=setInterval(()=>{
+    tick++;
+    let g, ang, ch, big=false;
+    const roll=Math.random();
+    if(roll>0.94){ // big hit
+      big=true; g=70+Math.random()*55; ang=4200+Math.random()*3500;
+    } else if(roll>0.7){ // moderate
+      g=25+Math.random()*35; ang=1200+Math.random()*2600;
+    } else { // routine play
+      g=6+Math.random()*18; ang=200+Math.random()*1400;
+    }
+    ch = Math.floor(Math.random()*4);
+    const fsr = Math.round(g*180 + Math.random()*1200);
+    const status = (g>=70||ang>=4500)?"alert":"nominal";
+    const d = {g:+g.toFixed(1), angAccel:Math.round(ang), fsr, pad:`0x49/${ch}`, status};
+    render(d);
+    if(status==="alert"){
+      logEvent("event","Impact flagged", nowT(), `${d.g.toFixed(0)}g`);
+      if(concussionProb(d.g,d.angAccel)>=0.5) fireAlert(d);
+    }
+  },1000);
+}
+
+function stop(){
+  if(state.es){ state.es.close(); state.es=null; }
+  if(state.demoTimer){ clearInterval(state.demoTimer); state.demoTimer=null; }
+}
+
+/* ---------- screen switching ---------- */
+function openSetup(){
+  $("#inToken").value = state.token;
+  $("#inDevice").value = state.device;
+  $("#setup").classList.remove("hidden");
+}
+function closeSetup(){ $("#setup").classList.add("hidden"); }
+
+$("#btnConnect").onclick=()=>{
+  const tok=$("#inToken").value.trim(), dev=$("#inDevice").value.trim()||DEFAULT_DEVICE;
+  if(!tok){ toast("Paste an access token first"); return; }
+  state.token=tok; state.device=dev;
+  localStorage.setItem("axon_token",tok); localStorage.setItem("axon_device",dev);
+  closeSetup(); connectLive();
+};
+$("#btnDemo").onclick=()=>{ closeSetup(); connectDemo(); };
+$("#btnSettings").onclick=()=>{ stop(); setStatus("","Offline"); openSetup(); };
+$("#btnClear").onclick=()=>{ state.events=[]; $("#evCount").textContent="0"; $("#log").innerHTML='<div class="empty">Log cleared.</div>'; };
+
+/* ---------- boot ---------- */
+(function boot(){
+  $("#inDevice").value=state.device;
+  if(state.token){ closeSetup(); connectLive(); }
+  else openSetup();
+})();
+</script>
+</body>
+</html>
