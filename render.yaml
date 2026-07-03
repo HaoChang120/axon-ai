@@ -1,0 +1,23 @@
+# Render Blueprint: deploy the Axon API in one click.
+# Dashboard -> New -> Blueprint -> pick this repo. Render reads this file.
+# You will be prompted for AXON_DEVICE_KEY (it is in ~/axon-firmware/axon_helmet_v2.ino,
+# never committed here). Free tier: no disk, so AXON_BOOTSTRAP reseeds on restart.
+services:
+  - type: web
+    name: axon-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: AXON_JWT_SECRET
+        generateValue: true
+      - key: AXON_BOOTSTRAP
+        value: "1"
+      - key: AXON_DEVICE_ID
+        value: e00fce68baab0b648b3d9899
+      - key: AXON_DEVICE_NAME
+        value: Axon_Main_Module
+      - key: AXON_DEVICE_KEY
+        sync: false

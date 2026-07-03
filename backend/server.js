@@ -70,6 +70,26 @@ function ensureDemoPlayer() {
 const DEMO_PLAYER = ensureDemoPlayer();
 const DEMO_OWNER = db.prepare('SELECT owner_id FROM players WHERE id = ?').get(DEMO_PLAYER).owner_id;
 
+// ---- ephemeral-host bootstrap (Render free tier has no persistent disk) ----
+// On a fresh DB, recreate the demo coach + roster and re-register the real
+// helmet with a stable key from env, so the firmware never needs re-flashing
+// after the host restarts. Set AXON_BOOTSTRAP=1 + AXON_DEVICE_ID/KEY.
+if (process.env.AXON_BOOTSTRAP === '1') {
+  if (!db.prepare('SELECT id FROM users WHERE email = ?').get('coach@axon.ai')) require('./seed');
+  const devId = process.env.AXON_DEVICE_ID, devKey = process.env.AXON_DEVICE_KEY;
+  if (devId && devKey) {
+    const ex = db.prepare('SELECT id FROM devices WHERE device_id = ?').get(devId);
+    if (ex) db.prepare('UPDATE devices SET device_key = ? WHERE id = ?').run(devKey, ex.id);
+    else {
+      const coach = db.prepare('SELECT id FROM users WHERE email = ?').get('coach@axon.ai');
+      const player = coach && db.prepare('SELECT id FROM players WHERE owner_id = ? ORDER BY id DESC').get(coach.id);
+      db.prepare('INSERT INTO devices (device_id, device_key, owner_id, player_id, name) VALUES (?, ?, ?, ?, ?)')
+        .run(devId, devKey, coach ? coach.id : DEMO_OWNER, player ? player.id : DEMO_PLAYER,
+             process.env.AXON_DEVICE_NAME || 'Axon_Main_Module');
+    }
+  }
+}
+
 // =====================================================================
 //  LIVE EVENT HUB — Server-Sent Events. This is your own realtime layer,
 //  replacing Particle Cloud's event stream. The firmware POSTs to
