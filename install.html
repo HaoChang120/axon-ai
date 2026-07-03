@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#100d0a">
+<title>Install Axon</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12,200..800;48,200..800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#100d0a; --bg2:#0a0807; --panel:#181410; --panel2:#1f1913;
+    --ink:#f5eee1; --dim:#a99e8c; --faint:#6b6253;
+    --line:rgba(245,238,225,.10); --line2:rgba(245,238,225,.055);
+    --signal:#ee5a2a; --amber:#f2a44c; --good:#9bbf7e;
+    --disp:"Bricolage Grotesque",-apple-system,system-ui,sans-serif;
+    --serif:"Instrument Serif",Georgia,serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:radial-gradient(120% 80% at 50% 0%,#1a130d 0%,#0a0807 60%);color:var(--ink);
+    font-family:var(--disp);font-weight:400;-webkit-font-smoothing:antialiased;letter-spacing:-.01em;
+    min-height:100dvh;padding:calc(env(safe-area-inset-top,0) + 40px) 20px 60px}
+  .wrap{max-width:760px;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:10px;justify-content:center}
+  .brand svg{width:34px;height:17px;color:var(--signal);overflow:visible}
+  .brand b{font-weight:700;font-size:18px;letter-spacing:-.02em}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--signal);text-align:center;margin-top:26px}
+  h1{text-align:center;font-size:clamp(30px,7vw,44px);font-weight:700;line-height:1.03;letter-spacing:-.035em;margin:10px 0 8px}
+  h1 .it{font-family:var(--serif);font-style:italic;color:var(--signal)}
+  .sub{text-align:center;color:var(--dim);font-size:15px;line-height:1.5;max-width:44ch;margin:0 auto}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:22px 20px;display:flex;flex-direction:column;align-items:center;text-align:center}
+  .tag{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--signal);border:1px solid var(--line);padding:5px 12px;border-radius:100px}
+  .card h2{font-size:23px;font-weight:700;letter-spacing:-.03em;margin:14px 0 4px}
+  .card p{color:var(--dim);font-size:13.5px;line-height:1.45;min-height:38px}
+  .qr{width:180px;height:180px;background:#fff;border-radius:16px;padding:12px;margin:16px 0 8px;box-shadow:0 14px 34px -18px rgba(0,0,0,.7)}
+  .qr img{width:100%;height:100%;display:block;image-rendering:pixelated}
+  .scan{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:14px;border-radius:13px;
+    font-family:var(--disp);font-weight:600;font-size:15px;text-decoration:none;color:#160a05;background:linear-gradient(135deg,#ff7a45,#ee5a2a);box-shadow:0 12px 30px -14px var(--signal)}
+  .creds{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:12px;line-height:1.6}
+  .creds b{color:var(--dim);font-weight:500}
+  .steps{margin-top:36px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px 22px 8px}
+  .steps h3{font-size:16px;font-weight:600;margin-bottom:4px}
+  .steps .os{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--signal);margin:16px 0 8px}
+  .st{display:flex;gap:11px;padding:7px 0;font-size:14px;color:var(--dim);line-height:1.45}
+  .st b{color:var(--ink);font-weight:600}
+  .st .n{flex:0 0 auto;width:20px;height:20px;border-radius:6px;background:var(--panel2);color:var(--signal);font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .note{margin-top:22px;text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--faint);line-height:1.7}
+  .note b{color:var(--amber);font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><svg viewBox="0 0 40 20" fill="none"><path d="M2 10h9l3-7 6 14 3-7h15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>AXON</b></div>
+  <div class="eyebrow">Install on your phone</div>
+  <h1>Add Axon to your <span class="it">home screen</span></h1>
+  <p class="sub">Scan a code with your phone's camera to open the app, then Add to Home Screen. It launches full-screen, like a native app.</p>
+
+  <div class="grid">
+    <div class="card">
+      <span class="tag">For athletes</span>
+      <h2>Axon Athlete</h2>
+      <p>Your live risk, symptom check-ins, and a line to your trainer.</p>
+      <div class="qr"><img alt="Scan to open Axon Athlete" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXIAAAFyAQMAAADS6sNKAAAABlBMVEUQDQr///8xIrmTAAACAUlEQVR42u1bSY7DMAwTJg/Ik/z1PMkPMJBJbFFW0lNPMzToQ5FFvZSgSNGunV+tw1SvetX/p/pqvsrZ0tf7o/PY/epa21X/Y98t1f9t/Y3v5oCWjvjeYd+u2xv4Ujd/0euELyW+nZwdy0HYcWWBL5AWvkvgm+lswncdfO/bS4TxAvorfNfQ34703qxTt18N9KW/1PiGf67epN8f8s/M+M71UuIxMz3nKf2epPrr82+ahMNJ45nwpe3P7pW7oWqwVoZxaWiy9Je0PzenbqkfjXtaqwtk8ZcYX0RXPhVhSDqSBRN/aecjj5mdpjnJ6kps0a71ezLqL4bgYO0+4+gGuyV8medfjzbQmueeQ1gr6S+xfw4SH4m/DeocIZbwZcXXEZxdGZklpFf5JK9/zvq7Pwcizb8L+GfsKji+bqLRn8cmoeZfVv6iDUdqNbh6IqRMSbTw5cXXdwUtH9d5hBzqz7T9uSC18g+Lnf497wQLX+b8qqSTlOCvG2sYL+FLim9cpXHpsbEk/8yO78f+r+FFaLLw5fRXOL+Rk2iPnuuWDnYIX0b+2pu1bqhOT6Jx8E78pe3P6fykzSSrRTRp8lfU89GkaQY5e2rp7wL4mqV88hltSH/X4K9Nw1xf6bT4S66/Z1AXJ7EQcpjwXcA/p1Oxc/6NoxvyV+zzr/7/rnrVU9X/Agebg/EDlEyCAAAAAElFTkSuQmCC"></div>
+      <div class="scan">Point your camera here</div>
+      <a class="btn" href="athlete.html">Open Axon Athlete</a>
+      <div class="creds"><b>Demo login</b><br>player@axon.ai · axon1234</div>
+    </div>
+
+    <div class="card">
+      <span class="tag">For staff</span>
+      <h2>Axon Sideline</h2>
+      <p>Live roster risk for coaches, trainers, and parents.</p>
+      <div class="qr"><img alt="Scan to open Axon Sideline" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXIAAAFyAQMAAADS6sNKAAAABlBMVEUQDQr///8xIrmTAAACA0lEQVR42u1bQY4DIQyLtg/gSXy9T5oHINEBYhLUvfS068ocUKegHmqZ2A5j/aPxNO3Xfu3/T/sv81GvRzcrbfxGG1887g2ld6yPxx/7bGj/3+4f+D4W1je+E2T/zuoEeeBb5/olfFnxneR0QBdr2wY5gBe+5PheOJDr5rQvCN+v4e9N3XQgLxIL36+ov8cUTFb95cb30M+/TdLPzPjGmEiX+bFtu3T6Kf2fnPW35NK7Cu50wuuQ7uOT+EvKXw80JpZg8sByrK58ozTpK379vKbi/D0WTPyl1lcVXigekx02xB3Cl1Vf7axqyuQVbRTXXGsSf3nrrxteFFyQGO7YSSz9TJtvPHc+2aGV0UnqPTUZhC/l+ezkhPWNVDI5YeFLrJ9r6iUcXd+68DUTvszns5vgCLGiyY9KLH3F648ihI44K/UctjEWvqz6GQz1pNLe7LD8LzG+Di2mlGpszWXqHxHrK0vS2evvWlV+9RX+qCaT1FCTj0uU0lfc5/Pk6vZCyDwCafGX2/9GjOGd4MDXdiYtfDnP59Rk2PdjMUDip/wRrf+NGOOtq5CCaeHLej6n9xf8piyUVjqkxV9if4T7z2gXtkzsFEzr/yTG9+BvdBrQExa+/Pi6/+1HpzDeaRC+zPW3e4zhcqsfr4aKv/z6Gfcn0zjeJBS+1P5X779rv/ZT7X8BbmGTkIUt4F8AAAAASUVORK5CYII="></div>
+      <div class="scan">Point your camera here</div>
+      <a class="btn" href="sideline.html">Open Axon Sideline</a>
+      <div class="creds"><b>Demo login</b><br>coach@axon.ai · axon1234</div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <h3>Add to Home Screen</h3>
+    <div class="os">iPhone · Safari</div>
+    <div class="st"><span class="n">1</span><div>Open the app link in <b>Safari</b> (scan the code with the Camera app).</div></div>
+    <div class="st"><span class="n">2</span><div>Tap the <b>Share</b> button (the square with an up-arrow).</div></div>
+    <div class="st"><span class="n">3</span><div>Scroll down, tap <b>Add to Home Screen</b>, then <b>Add</b>.</div></div>
+    <div class="os">Android · Chrome</div>
+    <div class="st"><span class="n">1</span><div>Open the app link in <b>Chrome</b>.</div></div>
+    <div class="st"><span class="n">2</span><div>Tap the <b>⋮</b> menu, then <b>Install app</b> (or <b>Add to Home screen</b>).</div></div>
+  </div>
+
+  <div class="note">First login after a while can take up to <b>50 seconds</b> — the free server is waking up. It's fast after that.</div>
+</div>
+</body>
+</html>
