@@ -1248,7 +1248,7 @@ function renderInsights(){
 /* ===== boot ===== */
 $("#tabbar").style.display='none';
 $("#inDevice").value=state.device;
-$("#loginApi").value=state.api||'https://axon-api.onrender.com';
+$("#loginApi").value=state.api||'https://axon-api-g44g.onrender.com';
 if(state.conn==='api'&&state.apiToken)$("#devSub").textContent='Your Axon API · connected';
 else if(state.token)$("#devSub").textContent='Axon_Main_Module · paired';
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
