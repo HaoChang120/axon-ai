@@ -1,0 +1,17 @@
+{
+  "name": "Axon Athlete",
+  "short_name": "Axon Athlete",
+  "description": "Your head-impact safety, in your pocket. Live risk, check-ins, and a line to your trainer.",
+  "start_url": "./athlete.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#100d0a",
+  "theme_color": "#100d0a",
+  "categories": ["health", "sports", "medical"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

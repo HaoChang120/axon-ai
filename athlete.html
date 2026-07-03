@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Axon Athlete">
+<meta name="theme-color" content="#100d0a">
+<link rel="manifest" href="athlete.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Axon Athlete</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12,200..800;48,200..800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#100d0a; --bg2:#0a0807; --panel:#181410; --panel2:#1f1913; --panel3:#241d15;
+  --ink:#f5eee1; --dim:#a99e8c; --faint:#6b6253;
+  --line:rgba(245,238,225,.10); --line2:rgba(245,238,225,.055);
+  --signal:#ee5a2a; --amber:#f2a44c; --alert:#ff3b46; --good:#9bbf7e;
+  --grad:linear-gradient(135deg,#ff7a45 0%,#ee5a2a 100%);
+  --disp:"Bricolage Grotesque",-apple-system,system-ui,sans-serif;
+  --serif:"Instrument Serif",Georgia,serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --shadow:0 24px 60px -22px rgba(0,0,0,.75);
+  --r:22px; --r-sm:15px;
+  --safe-top:env(safe-area-inset-top,0px); --safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:var(--disp);font-weight:400;background:#000;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;letter-spacing:-.01em;-webkit-font-smoothing:antialiased}
+.mono{font-family:var(--mono);font-feature-settings:"tnum"}
+.serif{font-family:var(--serif)} .it{font-family:var(--serif);font-style:italic}
+h1,h2,h3,h4{font-family:var(--disp);letter-spacing:-.03em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input{font-family:var(--disp)}
+
+/* ===== phone frame ===== */
+#device{position:relative;width:min(440px,100vw);height:100dvh;max-height:940px;background:var(--bg);overflow:hidden;
+  box-shadow:0 0 0 1px rgba(255,255,255,.04),0 40px 120px -30px rgba(0,0,0,.9)}
+@media(min-width:480px){
+  body{background:radial-gradient(140% 100% at 50% 0%,#1a130d 0%,#050403 62%)}
+  #device{border-radius:46px;border:1px solid rgba(255,255,255,.06);height:min(93dvh,912px)}
+}
+#ember{position:absolute;inset:0;z-index:0;opacity:.5;pointer-events:none}
+.glow{position:absolute;border-radius:50%;filter:blur(80px);z-index:0;pointer-events:none}
+.glow.a{width:320px;height:320px;background:rgba(238,90,42,.16);top:-100px;right:-90px}
+.glow.b{width:280px;height:280px;background:rgba(242,164,76,.09);bottom:70px;left:-110px}
+
+/* ===== status bar ===== */
+.statusbar{position:relative;z-index:20;height:calc(46px + var(--safe-top));padding-top:var(--safe-top);
+  display:flex;align-items:center;justify-content:space-between;padding-left:30px;padding-right:26px;font-size:15px;font-weight:600;flex-shrink:0}
+.statusbar .mono{font-size:15px;letter-spacing:0}
+.sb-right{display:flex;align-items:center;gap:7px} .sb-right svg{display:block}
+
+/* ===== views ===== */
+#viewport{position:relative;z-index:10;height:calc(100% - 46px - var(--safe-top))}
+.view{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;
+  transition:opacity .42s cubic-bezier(.4,0,.2,1),transform .42s cubic-bezier(.4,0,.2,1);transform:translateX(18px) scale(.99)}
+.view.active{opacity:1;pointer-events:auto;transform:none}
+.view.exit-left{transform:translateX(-18px) scale(.99)}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:0 22px 128px}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ===== headers ===== */
+.app-head{padding:8px 22px 16px;display:flex;align-items:flex-end;justify-content:space-between}
+.app-head .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--signal);font-weight:500}
+.app-head h1{font-size:31px;font-weight:700;margin-top:4px;letter-spacing:-.035em}
+.app-head h1 .it{color:var(--signal)}
+.avatar{width:44px;height:44px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);
+  display:grid;place-items:center;font-weight:600;font-size:15px;color:var(--signal);flex-shrink:0;cursor:pointer;transition:transform .2s}
+.avatar:active{transform:scale(.92)}
+
+/* ===== cards ===== */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;position:relative;overflow:hidden}
+.card-title{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);display:flex;align-items:center;justify-content:space-between;gap:8px}
+
+/* ===== hero ring ===== */
+.hero{display:flex;flex-direction:column;align-items:center;padding:24px 20px 22px;
+  background:radial-gradient(120% 90% at 50% 0%,rgba(238,90,42,.14),transparent 70%),var(--panel)}
+.hero.alert{border-color:rgba(255,59,70,.5)}
+.ring-wrap{position:relative;width:208px;height:208px}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-center .big{font-size:56px;font-weight:800;line-height:1;letter-spacing:-.04em}
+.ring-center .big small{font-size:24px;font-weight:500;color:var(--dim)}
+.ring-center .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin-top:8px}
+.status-pill{margin-top:18px;display:inline-flex;align-items:center;gap:8px;padding:8px 15px;border-radius:100px;font-size:12.5px;font-weight:500;
+  background:rgba(155,191,126,.1);color:var(--good);border:1px solid rgba(155,191,126,.22)}
+.status-pill.demo{background:rgba(242,164,76,.1);color:var(--amber);border-color:rgba(242,164,76,.22)}
+.status-pill.off{background:var(--panel2);color:var(--faint);border-color:var(--line)}
+.status-pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:pulse 2s infinite}
+.status-pill.off .dot{animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 currentColor;opacity:1}70%{box-shadow:0 0 0 8px transparent;opacity:.5}100%{opacity:1}}
+
+/* ===== vitals ===== */
+.vitals{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.vital{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 12px}
+.vital .v-ico{color:var(--signal);margin-bottom:8px}
+.vital .v-val{font-size:23px;font-weight:700;display:flex;align-items:baseline;gap:2px;letter-spacing:-.02em;transition:color .2s}
+.vital .v-val small{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--dim)}
+.vital .v-lbl{font-family:var(--mono);font-size:9.5px;color:var(--faint);margin-top:4px;letter-spacing:.06em;text-transform:uppercase}
+.vital.hot .v-val{color:var(--signal)}
+
+/* ===== CTA ===== */
+.cta{width:100%;margin-top:16px;border-radius:var(--r);padding:18px;font-size:16px;font-weight:600;color:#160a05;background:var(--grad);
+  display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 14px 34px -14px var(--signal);transition:transform .15s,box-shadow .3s;overflow:hidden}
+.cta:active{transform:scale(.975)}
+.cta.live{background:rgba(255,59,70,.12);color:var(--alert);border:1px solid rgba(255,59,70,.35);box-shadow:none}
+.cta.live .rec{width:11px;height:11px;border-radius:50%;background:var(--alert);animation:pulseR 1.3s infinite}
+@keyframes pulseR{0%{box-shadow:0 0 0 0 rgba(255,59,70,.6)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+
+/* ===== live sparkline card ===== */
+.sparkcard{margin-top:14px;overflow:hidden;max-height:0;padding:0;border-width:0;transition:max-height .5s cubic-bezier(.4,0,.2,1),padding .3s}
+.sparkcard.show{max-height:150px;padding:16px 18px;border-width:1px}
+.spark{width:100%;height:64px;display:block;margin-top:10px}
+.spark path{fill:none;stroke:var(--signal);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.spark .thresh{stroke:rgba(255,59,70,.4);stroke-width:1;stroke-dasharray:3 4}
+
+/* ===== helmet pad map ===== */
+.helmet{position:relative;height:150px;display:flex;align-items:center;justify-content:center;margin-top:6px}
+.helmet svg{height:144px;width:auto;overflow:visible}
+.pad{fill:var(--panel2);stroke:var(--line);stroke-width:1.4;transition:fill .25s,stroke .25s}
+.pad.on{fill:var(--signal);stroke:var(--amber)}
+.pad.hot{fill:var(--alert);stroke:#ff8a90}
+.padlbl{fill:var(--faint);font-family:var(--mono);font-size:9px;letter-spacing:.05em}
+
+/* ===== section heading ===== */
+.section-h{display:flex;align-items:center;justify-content:space-between;margin:26px 2px 13px}
+.section-h h2{font-size:19px;font-weight:600}
+.section-h a{font-family:var(--mono);font-size:12px;color:var(--signal);font-weight:500;text-decoration:none}
+
+/* ===== chart ===== */
+.chart{height:168px;display:flex;align-items:flex-end;gap:12px;padding-top:14px;position:relative}
+.gridline{position:absolute;left:0;right:0;height:1px;background:var(--line2)}
+.gridline span{position:absolute;left:0;top:-8px;font-family:var(--mono);font-size:9.5px;color:var(--faint)}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;z-index:2;height:100%;justify-content:flex-end}
+.bar{width:100%;max-width:30px;border-radius:8px 8px 4px 4px;height:0;transition:height 1s cubic-bezier(.34,1.4,.64,1);background:linear-gradient(180deg,var(--amber),var(--signal))}
+.bar.hi{background:linear-gradient(180deg,#ff8a5c,var(--alert))}
+.bar-x{font-family:var(--mono);font-size:10px;color:var(--faint)}
+
+/* ===== AI bar ===== */
+.ai-bar{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:100px;padding:6px 6px 6px 18px;margin-top:14px}
+.ai-bar input{flex:1;background:none;border:none;color:var(--ink);font-size:15px;outline:none}
+.ai-bar input::placeholder{color:var(--faint)}
+.ai-send{width:40px;height:40px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#160a05;flex-shrink:0;transition:transform .15s}
+.ai-send:active{transform:scale(.9)}
+
+/* ===== history session cards ===== */
+.session{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin-bottom:12px;overflow:hidden;transition:border-color .3s}
+.session-head{padding:17px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.session-head .s-date{font-weight:600;font-size:15px}
+.session-head .s-sub{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:3px}
+.risk-chip{font-family:var(--mono);font-size:12px;font-weight:500;padding:5px 11px;border-radius:9px}
+.risk-chip.low{background:rgba(155,191,126,.12);color:var(--good)} .risk-chip.med{background:rgba(242,164,76,.13);color:var(--amber)} .risk-chip.high{background:rgba(255,59,70,.13);color:var(--alert)}
+.session-body{max-height:0;overflow:hidden;transition:max-height .45s cubic-bezier(.4,0,.2,1)}
+.session.open .session-body{max-height:220px} .session.open{border-color:var(--line)}
+.metrics{padding:4px 18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.metric .m-lbl{font-family:var(--mono);font-size:9.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em}
+.metric .m-val{font-family:var(--mono);font-size:18px;font-weight:500;margin-top:4px}
+.metric .m-val small{font-size:11px;color:var(--dim)}
+.chev{transition:transform .4s;color:var(--faint)} .session.open .chev{transform:rotate(180deg)}
+
+/* ===== profile ===== */
+.profile-hero{display:flex;flex-direction:column;align-items:center;padding:14px 0 24px}
+.pf-av{width:86px;height:86px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-size:32px;font-weight:700;color:#160a05;box-shadow:0 16px 40px -16px var(--signal)}
+.pf-name{font-size:23px;font-weight:600;margin-top:16px}
+.pf-mail{font-family:var(--mono);font-size:13px;color:var(--dim);margin-top:4px}
+.role-tag{margin-top:12px;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--signal);border:1px solid var(--line);padding:6px 14px;border-radius:100px}
+.menu{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.menu-row{display:flex;align-items:center;gap:15px;padding:16px 18px;cursor:pointer;transition:background .2s;border-bottom:1px solid var(--line2)}
+.menu-row:last-child{border-bottom:none} .menu-row:active{background:var(--panel2)}
+.menu-row .mr-ico{width:36px;height:36px;border-radius:10px;background:var(--panel2);display:grid;place-items:center;color:var(--signal);flex-shrink:0}
+.menu-row .mr-txt{flex:1;font-size:15px;font-weight:500} .menu-row .mr-sub{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:2px}
+.menu-row .mr-arr{color:var(--faint)}
+.menu-row.danger .mr-ico{color:var(--alert);background:rgba(255,59,70,.1)} .menu-row.danger .mr-txt{color:var(--alert)}
+
+/* ===== coach team ===== */
+.team-banner{background:radial-gradient(110% 100% at 0% 0%,rgba(238,90,42,.16),transparent 60%),var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;align-items:center;gap:16px}
+.tb-badge{width:54px;height:54px;border-radius:16px;background:var(--grad);display:grid;place-items:center;font-weight:700;font-size:22px;color:#160a05;flex-shrink:0}
+.tb-id{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:3px}
+.tb-count{margin-left:auto;text-align:right} .tb-count b{font-size:26px;font-weight:700;display:block} .tb-count span{font-family:var(--mono);font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
+.player-row{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:15px 16px;display:flex;align-items:center;gap:14px;margin-bottom:10px;transition:transform .2s}
+.player-row:active{transform:scale(.98)}
+.pr-av{width:42px;height:42px;border-radius:50%;background:var(--panel3);display:grid;place-items:center;font-weight:600;font-size:14px;color:var(--signal);flex-shrink:0}
+.pr-name{font-weight:600;font-size:15px} .pr-meta{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:3px;display:flex;align-items:center;gap:6px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
+.mini-gauge{margin-left:auto;text-align:right} .mini-gauge b{font-family:var(--mono);font-size:17px;font-weight:500}
+.mini-gauge.low b{color:var(--good)} .mini-gauge.med b{color:var(--amber)} .mini-gauge.high b{color:var(--alert)}
+.mini-gauge span{font-family:var(--mono);font-size:9.5px;color:var(--faint);display:block;text-transform:uppercase}
+
+/* ===== chat ===== */
+.chat-header{display:flex;align-items:center;gap:13px;padding:6px 20px 14px;border-bottom:1px solid var(--line);position:relative;z-index:5}
+.ch-back{color:var(--signal);padding:6px 4px 6px 0;cursor:pointer}
+.ch-av{width:42px;height:42px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-weight:700;font-size:15px;color:#160a05;flex-shrink:0}
+.ch-name{font-weight:600;font-size:16px} .ch-status{font-family:var(--mono);font-size:11px;color:var(--dim);display:flex;align-items:center;gap:6px;margin-top:3px}
+.chat-scroll{display:flex;flex-direction:column;gap:3px;padding:18px 20px 150px}
+.msg-row{display:flex;flex-direction:column;max-width:80%;margin-top:9px;animation:pop .35s cubic-bezier(.2,.8,.3,1)}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+.msg-row.in{align-self:flex-start} .msg-row.out{align-self:flex-end;align-items:flex-end}
+.bubble{padding:12px 16px;font-size:15px;line-height:1.4;border-radius:20px}
+.in .bubble{background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:7px}
+.out .bubble{background:var(--grad);color:#160a05;font-weight:500;border-bottom-right-radius:7px}
+.msg-time{font-family:var(--mono);font-size:10px;color:var(--faint);margin:5px 6px 0}
+.bubble.alert{background:rgba(255,59,70,.12);border:1px solid rgba(255,59,70,.3);color:var(--alert);font-weight:600;display:flex;gap:9px;align-items:center}
+.day-sep{align-self:center;font-family:var(--mono);font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.1em;margin:14px 0 6px}
+.typing{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-radius:20px;border-bottom-left-radius:7px;padding:14px 18px;display:flex;gap:5px;margin-top:9px}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--faint);animation:blink 1.3s infinite}
+.typing span:nth-child(2){animation-delay:.2s} .typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.chat-composer{position:absolute;left:0;right:0;bottom:calc(72px + var(--safe-bot));z-index:25;display:flex;align-items:center;gap:10px;padding:12px 18px;
+  background:rgba(16,13,10,.8);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line)}
+.cc-field{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:0 16px;display:flex;align-items:center}
+.cc-field input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-size:15px;padding:13px 0}
+.cc-field input::placeholder{color:var(--faint)}
+.cc-send{width:44px;height:44px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#160a05;flex-shrink:0;transition:transform .15s}
+.cc-send:active{transform:scale(.9)}
+
+/* ===== tab bar ===== */
+.tabbar{position:absolute;left:0;right:0;bottom:0;z-index:30;padding:10px 20px calc(14px + var(--safe-bot));
+  display:flex;justify-content:space-around;align-items:center;background:rgba(16,13,10,.75);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border-top:1px solid var(--line)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--faint);cursor:pointer;font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:.04em;transition:color .25s;flex:1}
+.tab svg{transition:transform .3s} .tab.on{color:var(--signal)} .tab.on svg{transform:translateY(-1px)}
+
+/* ===== sub-pages ===== */
+.sub-head{display:flex;align-items:center;gap:14px;padding:8px 22px 16px}
+.sub-head .back{width:38px;height:38px;border-radius:12px;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink);flex-shrink:0;cursor:pointer;transition:transform .15s}
+.sub-head .back:active{transform:scale(.9)}
+.sub-head h1{font-size:24px;font-weight:700;letter-spacing:-.03em}
+.sub-head .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--signal)}
+.setting{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.set-row{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line2)}
+.set-row:last-child{border-bottom:none}
+.sr-txt{flex:1} .sr-t{font-size:15px;font-weight:500} .sr-s{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:3px;line-height:1.4}
+.tgl{width:46px;height:28px;border-radius:100px;background:var(--panel3);border:1px solid var(--line);position:relative;flex-shrink:0;transition:.25s;cursor:pointer}
+.tgl.on{background:var(--signal);border-color:var(--signal)}
+.tgl::after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.25s}
+.tgl.on::after{transform:translateX(18px)}
+.slider{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:5px;background:var(--panel3);outline:none;margin-top:14px}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--signal);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.slider::-moz-range-thumb{width:20px;height:20px;border:none;border-radius:50%;background:var(--signal);cursor:pointer}
+.pipe .node{display:flex;gap:14px;position:relative;padding-bottom:20px}
+.pipe .node:last-child{padding-bottom:0}
+.pipe .node .ln{position:absolute;left:17px;top:36px;bottom:0;width:2px;background:var(--line)}
+.pipe .node:last-child .ln{display:none}
+.pipe .nd{width:36px;height:36px;border-radius:11px;background:var(--panel2);border:1px solid var(--line);display:grid;place-items:center;color:var(--signal);flex-shrink:0;z-index:1}
+.pipe .nt{font-weight:600;font-size:15px} .pipe .np{font-size:13px;color:var(--dim);margin-top:3px;line-height:1.45}
+.bigstat{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bs{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:16px}
+.bs-v{font-size:27px;font-weight:700;letter-spacing:-.02em} .bs-v small{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--dim)}
+.bs-l{font-family:var(--mono);font-size:9.5px;color:var(--faint);text-transform:uppercase;margin-top:5px;letter-spacing:.05em}
+.notif{display:flex;gap:13px;padding:15px 2px;border-bottom:1px solid var(--line2)}
+.notif .ni{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex-shrink:0}
+.notif.alert .ni{background:rgba(255,59,70,.14);color:var(--alert)} .notif.ok .ni{background:rgba(155,191,126,.13);color:var(--good)} .notif.info .ni{background:var(--panel2);color:var(--signal)}
+.notif .nt{font-size:14px;font-weight:500} .notif .ns{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:3px}
+.notif .nx{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint);white-space:nowrap}
+.bell{width:44px;height:44px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink);cursor:pointer;position:relative;flex-shrink:0}
+.bell .badge{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--alert);border:2px solid var(--bg)}
+.head-actions{display:flex;align-items:center;gap:10px}
+.prose{color:var(--dim);font-size:14.5px;line-height:1.6} .prose b{color:var(--ink);font-weight:600}
+.pill-tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--signal);background:var(--panel2);border:1px solid var(--line);padding:4px 10px;border-radius:100px;margin:0 6px 8px 0}
+.formrow{margin-top:14px} .formrow label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+.forminput{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;color:var(--ink);font-size:15px;outline:none;transition:border .2s}
+.forminput:focus{border-color:var(--signal)}
+.savebtn{width:100%;border-radius:13px;padding:16px;font-size:15px;font-weight:600;color:#160a05;background:var(--grad);margin-top:22px}
+
+/* ===== login ===== */
+#login{justify-content:center;padding:0 30px}
+.login-inner{display:flex;flex-direction:column;align-items:center;width:100%}
+.brand-logo{width:92px;height:92px;border-radius:26px;background:linear-gradient(160deg,#1c150e,#0b0806);border:1px solid var(--line);display:grid;place-items:center;box-shadow:var(--shadow);margin-bottom:22px;position:relative;overflow:hidden}
+.brand-logo::after{content:"";position:absolute;inset:0;background:radial-gradient(80% 60% at 50% 0%,rgba(238,90,42,.28),transparent)}
+.brand-name{font-family:var(--mono);font-size:12px;letter-spacing:.42em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;padding-left:.42em}
+.login-title{font-size:32px;font-weight:700;margin-bottom:6px;letter-spacing:-.035em}
+.login-title .it{color:var(--signal)}
+.login-sub{font-size:14px;color:var(--dim);margin-bottom:32px;text-align:center;max-width:30ch;line-height:1.5}
+.role-switch{display:flex;gap:8px;margin-bottom:26px;background:var(--panel);border:1px solid var(--line);border-radius:100px;padding:5px;width:100%}
+.role-switch button{flex:1;color:var(--dim);font-weight:600;font-size:13.5px;padding:11px;border-radius:100px;transition:.25s}
+.role-switch button.on{background:var(--grad);color:#160a05}
+.field{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);display:flex;align-items:center;gap:13px;padding:0 16px;margin-bottom:12px;transition:border-color .25s,background .25s}
+.field:focus-within{border-color:var(--signal);background:var(--panel2)}
+.field svg{color:var(--faint);flex-shrink:0}
+.field input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-size:15.5px;padding:17px 0}
+.field input::placeholder{color:var(--faint)}
+.field .eye{cursor:pointer}
+.login-cta{width:100%;border-radius:var(--r-sm);padding:18px;font-size:16px;font-weight:600;color:#160a05;background:var(--grad);margin-top:10px;box-shadow:0 14px 34px -14px var(--signal);transition:transform .15s;display:flex;align-items:center;justify-content:center;gap:10px}
+.login-cta:active{transform:scale(.98)}
+.login-cta .spin{width:18px;height:18px;border:2px solid rgba(22,10,5,.3);border-top-color:#160a05;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.login-cta.loading .spin{display:block} .login-cta.loading span{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.login-foot{margin-top:22px;font-size:14px;color:var(--dim);text-align:center;line-height:2}
+.login-foot a{color:var(--signal);text-decoration:none;font-weight:600}
+
+/* ===== sheet (pairing) ===== */
+.sheet-back{position:absolute;inset:0;z-index:45;background:rgba(5,4,3,.6);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .3s}
+.sheet-back.show{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:46;background:var(--bg2);border-top:1px solid var(--line);border-radius:26px 26px 0 0;
+  padding:10px 24px calc(26px + var(--safe-bot));transform:translateY(100%);transition:transform .38s cubic-bezier(.3,.9,.3,1);max-height:88%;overflow-y:auto}
+.sheet.show{transform:translateY(0)}
+.sheet-grip{width:38px;height:4px;border-radius:3px;background:var(--line2);margin:6px auto 16px}
+.sheet h3{font-size:22px;font-weight:700;letter-spacing:-.03em}
+.sheet h3 .it{color:var(--signal)}
+.sheet p{color:var(--dim);font-size:14px;line-height:1.5;margin-top:6px}
+.slabel{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:18px 0 7px}
+.sinput{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;color:var(--ink);font-family:var(--mono);font-size:13px;outline:none;transition:border .2s}
+.sinput:focus{border-color:var(--signal)}
+.shint{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:7px;line-height:1.6}
+.shint a{color:var(--amber);text-decoration:none}
+.steps{margin-top:16px;border:1px solid var(--line2);border-radius:14px;background:var(--panel);padding:14px 15px}
+.st{display:flex;gap:11px;padding:7px 0;font-size:13px;color:var(--dim);line-height:1.45}
+.st b{color:var(--ink);font-weight:600}
+.st .num{flex:0 0 auto;width:20px;height:20px;border-radius:6px;background:var(--panel2);color:var(--signal);font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.sheet-cta{width:100%;border-radius:13px;padding:16px;font-size:15px;font-weight:600;color:#160a05;background:var(--grad);margin-top:20px}
+.sheet-ghost{width:100%;border-radius:13px;padding:15px;font-size:14px;font-weight:600;color:var(--ink);border:1px solid var(--line);margin-top:10px}
+
+/* ===== alert overlay ===== */
+.alertlay{position:absolute;inset:0;z-index:60;background:radial-gradient(120% 100% at 50% 30%,rgba(255,59,70,.3),rgba(10,8,7,.97));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.alertlay.show{opacity:1;pointer-events:auto}
+.alertlay .ring{width:96px;height:96px;border-radius:50%;border:3px solid var(--alert);display:flex;align-items:center;justify-content:center;font-size:44px;animation:ring 1s infinite}
+@keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(255,59,70,.5)}50%{box-shadow:0 0 0 22px transparent}}
+.alertlay h2{font-size:36px;font-weight:800;letter-spacing:-.03em;margin:20px 0 6px;color:#fff}
+.alertlay p{color:#ffd9dc;font-size:16px;max-width:30ch;line-height:1.4}
+.alertlay .stat{font-family:var(--mono);font-size:13px;color:#ffb3b8;margin-top:18px;letter-spacing:.04em}
+
+/* toast + entrance */
+.stagger>*{opacity:0;transform:translateY(16px);animation:rise .6s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+#toast{position:absolute;left:50%;bottom:108px;transform:translateX(-50%) translateY(20px);z-index:55;background:var(--panel3);border:1px solid var(--line);color:var(--ink);padding:13px 20px;border-radius:14px;font-size:13.5px;font-weight:500;opacity:0;pointer-events:none;transition:.35s;box-shadow:var(--shadow);max-width:84%;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%)}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div id="device">
+  <canvas id="ember"></canvas>
+  <div class="glow a"></div><div class="glow b"></div>
+
+  <!-- status bar -->
+  <div class="statusbar">
+    <span class="mono" id="clock">9:41</span>
+    <div class="sb-right">
+      <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="4" width="3" height="8" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" opacity=".4"/></svg>
+      <svg width="17" height="12" viewBox="0 0 17 12" fill="none"><path d="M8.5 2.5c2.2 0 4.2.85 5.7 2.25M8.5 2.5C6.3 2.5 4.3 3.35 2.8 4.75M8.5 6.5c1.1 0 2.1.45 2.85 1.2M8.5 6.5c-1.1 0-2.1.45-2.85 1.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8.5" cy="10.5" r="1.2" fill="currentColor"/></svg>
+      <svg width="26" height="13" viewBox="0 0 26 13" fill="none"><rect x="1" y="1" width="22" height="11" rx="3" stroke="currentColor" stroke-opacity=".4"/><rect x="2.5" y="2.5" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="24" y="4.5" width="1.5" height="4" rx="1" fill="currentColor" fill-opacity=".4"/></svg>
+    </div>
+  </div>
+
+  <div id="viewport">
+
+    <!-- ========= LOGIN ========= -->
+    <section class="view active" id="login">
+      <div class="login-inner stagger">
+        <div class="brand-logo" style="animation-delay:.05s">
+          <svg width="50" height="26" viewBox="0 0 40 20" fill="none"><path d="M2 10h9l3-7 6 14 3-7h15" stroke="#ee5a2a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="brand-name" style="animation-delay:.12s">A X O N&nbsp;&nbsp;A T H L E T E</div>
+        <div class="login-title" style="animation-delay:.16s">Your <span class="it">safety</span>, live</div>
+        <div class="login-sub" style="animation-delay:.2s">Every hit, scored in real time. Check in, see your risk, and stay in the loop with your trainer.</div>
+        <div class="field" style="animation-delay:.26s">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M6 14a4 4 0 010-8 5 5 0 019.5 1.5A3.5 3.5 0 0114 14H6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <input type="url" id="loginApi" placeholder="Axon API URL" value="" autocomplete="off" autocapitalize="off" spellcheck="false">
+        </div>
+        <div class="field" style="animation-delay:.28s">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="12" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M3 6l7 5 7-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <input type="email" id="email" placeholder="Email" value="player@axon.ai" autocomplete="off" autocapitalize="off">
+        </div>
+        <div class="field" style="animation-delay:.32s">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="4" y="9" width="12" height="8" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M7 9V6.5a3 3 0 016 0V9" stroke="currentColor" stroke-width="1.6"/></svg>
+          <input type="password" id="pw" placeholder="Password" value="axon1234">
+          <svg class="eye" onclick="togglePw()" width="19" height="19" viewBox="0 0 20 20" fill="none"><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="2.2" stroke="currentColor" stroke-width="1.6"/></svg>
+        </div>
+        <button class="login-cta" style="animation-delay:.36s" id="loginBtn" onclick="doLogin()"><span>Sign In</span><div class="spin"></div></button>
+        <div class="login-foot" style="animation-delay:.4s">
+          <a href="#" onclick="toast('Reset link sent ✓');return false">Forgot password?</a><br>
+          New to Axon? <a href="#" onclick="toast('Ask your coach for a team invite');return false">Create account</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========= HOME (player) ========= -->
+    <section class="view" id="home">
+      <div class="app-head">
+        <div><div class="eyebrow">Good afternoon</div><h1 id="firstName">Hao</h1></div>
+        <div class="head-actions">
+          <div class="bell" onclick="go('notifs')"><span class="badge"></span><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 8a5 5 0 0110 0c0 5 2 6 2 6H3s2-1 2-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.5 17a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.5"/></svg></div>
+          <div class="avatar" onclick="go('me')">HC</div>
+        </div>
+      </div>
+      <div class="scroll">
+        <div class="card hero" id="hero">
+          <div class="ring-wrap">
+            <svg width="208" height="208" viewBox="0 0 208 208">
+              <circle cx="104" cy="104" r="90" fill="none" stroke="rgba(245,238,225,.08)" stroke-width="14"/>
+              <circle id="riskRing" cx="104" cy="104" r="90" fill="none" stroke="var(--good)" stroke-width="14" stroke-linecap="round" stroke-dasharray="565" stroke-dashoffset="565"/>
+            </svg>
+            <div class="ring-center">
+              <div class="big" id="riskNum" style="color:var(--good)">0<small>%</small></div>
+              <div class="lbl">Concussion Risk</div>
+            </div>
+          </div>
+          <div class="status-pill off" id="connPill"><span class="dot"></span> <span id="connTxt">Helmet not paired</span></div>
+        </div>
+
+        <div class="vitals">
+          <div class="vital" id="mG">
+            <div class="v-ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 11h4l2-6 4 12 2-6h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="v-val" id="vG">0<small> g</small></div><div class="v-lbl">Linear</div>
+          </div>
+          <div class="vital" id="mA">
+            <div class="v-ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2a8 8 0 108 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+            <div class="v-val" id="vA">0<small> rad/s²</small></div><div class="v-lbl">Angular</div>
+          </div>
+          <div class="vital" id="mF">
+            <div class="v-ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2C6 6 4 8.5 4 12a6 6 0 0012 0c0-3.5-2-6-6-10z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+            <div class="v-val" id="vF">0<small></small></div><div class="v-lbl">Pad force</div>
+          </div>
+        </div>
+
+        <button class="cta" id="gameBtn" onclick="toggleGame()">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4l11 6-11 6V4z"/></svg>
+          <span id="gameLabel">Start Game</span>
+        </button>
+
+        <div class="card" id="checkinCard" style="margin-top:14px">
+          <div class="card-title" style="margin-bottom:12px"><span>Symptom check-in</span><span id="checkinState">not logged today</span></div>
+          <div class="prose" style="font-size:13.5px;margin-bottom:12px">How are you feeling right now? Your trainer sees this alongside your impacts.</div>
+          <div class="row" style="margin-top:0">
+            <button class="btn ghost sm" onclick="checkin('ok')">I feel good</button>
+            <button class="btn solid sm" onclick="checkin('symptoms')">I have symptoms</button>
+          </div>
+        </div>
+
+        <div class="card sparkcard" id="sparkcard">
+          <div class="card-title"><span>Live linear g</span><span>threshold 70 g</span></div>
+          <svg class="spark" id="spark" viewBox="0 0 320 64" preserveAspectRatio="none">
+            <line class="thresh" id="threshLine" x1="0" x2="320" y1="18" y2="18"/><path id="sparkPath" d=""/>
+          </svg>
+        </div>
+
+        <div class="section-h"><h2>Impact location</h2><span class="mono" style="font-size:11px;color:var(--faint)" id="padId">no contact</span></div>
+        <div class="card">
+          <div class="helmet">
+            <svg viewBox="0 0 200 150" aria-label="helmet pad map">
+              <path d="M100 12c-40 0-66 26-66 62 0 20 8 34 20 42h92c12-8 20-22 20-42 0-36-26-62-66-62z" fill="none" stroke="var(--line)" stroke-width="1.5"/>
+              <path d="M40 96c14 8 46 12 60 12s46-4 60-12" fill="none" stroke="var(--line2)" stroke-width="1.4"/>
+              <rect class="pad" id="pad-front" x="78" y="20" width="44" height="26" rx="9"/>
+              <rect class="pad" id="pad-left" x="40" y="52" width="30" height="40" rx="10"/>
+              <rect class="pad" id="pad-right" x="130" y="52" width="30" height="40" rx="10"/>
+              <rect class="pad" id="pad-rear" x="78" y="70" width="44" height="30" rx="10"/>
+              <text class="padlbl" x="100" y="36" text-anchor="middle">FRONT</text>
+              <text class="padlbl" x="55" y="75" text-anchor="middle">L</text>
+              <text class="padlbl" x="145" y="75" text-anchor="middle">R</text>
+              <text class="padlbl" x="100" y="88" text-anchor="middle">REAR</text>
+            </svg>
+          </div>
+        </div>
+
+        <div class="section-h"><h2>Peak acceleration</h2><a href="#" onclick="go('history');return false">History →</a></div>
+        <div class="card">
+          <div class="chart" id="chart">
+            <div class="gridline" style="bottom:88%"><span>24g</span></div>
+            <div class="gridline" style="bottom:55%"><span>15g</span></div>
+            <div class="gridline" style="bottom:22%"><span>5g</span></div>
+          </div>
+        </div>
+
+        <div class="ai-bar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" fill="#ee5a2a"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6L15 15M15 5l-1.4 1.4M6.4 13.6L5 15" stroke="#ee5a2a" stroke-width="1.4" stroke-linecap="round"/></svg>
+          <input placeholder="Ask Axon about your data…" id="aiInput" onkeydown="if(event.key==='Enter')askAI()">
+          <button class="ai-send" onclick="askAI()"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3 10l14-6-6 14-2-6-6-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========= HISTORY ========= -->
+    <section class="view" id="history">
+      <div class="app-head"><div><div class="eyebrow">Telemetry</div><h1>History</h1></div><div class="avatar" onclick="go('me')">HC</div></div>
+      <div class="scroll" id="histList"></div>
+    </section>
+
+    <!-- ========= TEAM (coach) ========= -->
+    <section class="view" id="team">
+      <div class="app-head"><div><div class="eyebrow">Coach console</div><h1>My Team</h1></div><div class="avatar" onclick="go('me')">HC</div></div>
+      <div class="scroll">
+        <div class="team-banner">
+          <div class="tb-badge">S</div>
+          <div><div id="teamName" style="font-weight:600;font-size:17px">My Team</div><div class="tb-id">TEAM</div></div>
+          <div class="tb-count"><b id="onlineCount">3</b><span>Live</span></div>
+        </div>
+        <button class="cta" id="allBtn" onclick="startAll()" style="margin-top:16px">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4l11 6-11 6V4z"/></svg><span>Start All Games</span>
+        </button>
+        <div class="section-h"><h2>Live Roster</h2><a href="#" onclick="toast('Invite a player by email');return false">+ Add</a></div>
+        <div id="roster"></div>
+      </div>
+    </section>
+
+    <!-- ========= ME ========= -->
+    <section class="view" id="me">
+      <div class="app-head"><div><div class="eyebrow">Account</div><h1>Profile</h1></div></div>
+      <div class="scroll">
+        <div class="profile-hero">
+          <div class="pf-av">HC</div>
+          <div class="pf-name">Hao Chang</div>
+          <div class="pf-mail">hao@axon.ai</div>
+          <div class="role-tag" id="roleTag">Player · #52 DE</div>
+        </div>
+        <div class="menu">
+          <div class="menu-row" onclick="go('profileEdit')"><div class="mr-ico"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M4 17c0-3.3 2.7-5 6-5s6 1.7 6 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><div class="mr-txt">User Information</div><svg class="mr-arr" width="8" height="14" viewBox="0 0 8 14" fill="none" style="margin-left:auto"><path d="M1 1l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+          <div class="menu-row" onclick="openSheet()"><div class="mr-ico"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 1l1.5 2.6 2.9-.7.3 3 2.8 1.1-1.4 2.6 1.4 2.6-2.8 1.1-.3 3-2.9-.7L10 19l-1.5-2.6-2.9.7-.3-3-2.8-1.1L3.9 11 2.5 8.4l2.8-1.1.3-3 2.9.7L10 1z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.4" stroke="currentColor" stroke-width="1.4"/></svg></div><div><div class="mr-txt">Connection</div><div class="mr-sub" id="devSub">Connected to your team</div></div><svg class="mr-arr" width="8" height="14" viewBox="0 0 8 14" fill="none" style="margin-left:auto"><path d="M1 1l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+          <div class="menu-row" onclick="go('works')"><div class="mr-ico"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="4" cy="10" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="16" cy="10" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="16" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 10h2m4 0h2M10 6v2m0 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="mr-txt">How Axon Works</div><svg class="mr-arr" width="8" height="14" viewBox="0 0 8 14" fill="none" style="margin-left:auto"><path d="M1 1l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+          <div class="menu-row" onclick="go('notifs')"><div class="mr-ico"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 8a5 5 0 0110 0c0 5 2 6 2 6H3s2-1 2-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.5 17a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="mr-txt">Notifications</div><svg class="mr-arr" width="8" height="14" viewBox="0 0 8 14" fill="none" style="margin-left:auto"><path d="M1 1l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="menu" style="margin-top:14px">
+          <div class="menu-row" onclick="signOut()"><div class="mr-ico"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 6V4a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 10h10m0 0l-3-3m3 3l-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="mr-txt">Sign Out</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========= CHAT ========= -->
+    <section class="view" id="chat">
+      <div class="chat-header">
+        <div class="ch-back" onclick="go(state.role==='coach'?'team':'home')"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="ch-av">MT</div>
+        <div style="flex:1"><div class="ch-name">Mike Torres</div><div class="ch-status"><span class="live-dot"></span> Athletic Trainer · online</div></div>
+      </div>
+      <div class="scroll chat-scroll" id="chatScroll"></div>
+      <div class="chat-composer">
+        <div class="cc-field"><input id="msgInput" placeholder="Message" onkeydown="if(event.key==='Enter')sendMsg()"></div>
+        <button class="cc-send" onclick="sendMsg()"><svg width="19" height="19" viewBox="0 0 20 20" fill="none"><path d="M3 10l14-6-6 14-2-6-6-2z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>
+      </div>
+    </section>
+
+    <!-- ========= SESSION DETAIL ========= -->
+    <section class="view" id="session">
+      <div class="sub-head"><div class="back" onclick="goBack()"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="eyebrow">Session</div><h1 id="sessTitle">session_001</h1></div></div>
+      <div class="scroll" id="sessBody"></div>
+    </section>
+
+    <!-- ========= PLAYER DETAIL (coach) ========= -->
+    <section class="view" id="player">
+      <div class="sub-head"><div class="back" onclick="goBack()"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="eyebrow">Player</div><h1 id="plTitle">Player</h1></div></div>
+      <div class="scroll" id="plBody"></div>
+    </section>
+
+    <!-- ========= NOTIFICATIONS ========= -->
+    <section class="view" id="notifs">
+      <div class="sub-head"><div class="back" onclick="goBack()"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="eyebrow">Inbox</div><h1>Notifications</h1></div></div>
+      <div class="scroll" id="notifList"></div>
+    </section>
+
+    <!-- ========= INSIGHTS / TRENDS ========= -->
+    <section class="view" id="insights">
+      <div class="sub-head"><div class="back" onclick="goBack()"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="eyebrow">Season</div><h1>Insights</h1></div></div>
+      <div class="scroll">
+        <div class="bigstat">
+          <div class="bs"><div class="bs-v" style="color:var(--good)">12.9<small> g</small></div><div class="bs-l">Avg peak linear</div></div>
+          <div class="bs"><div class="bs-v">263<small> °/s</small></div><div class="bs-l">Avg peak rotation</div></div>
+          <div class="bs"><div class="bs-v">4</div><div class="bs-l">Sessions logged</div></div>
+          <div class="bs"><div class="bs-v" style="color:var(--amber)">1</div><div class="bs-l">Flagged impacts</div></div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <div class="card-title"><span>Peak linear accel · season</span><span>24 g line</span></div>
+          <div class="chart" id="chart2" style="height:150px">
+            <div class="gridline" style="bottom:88%"><span>24g</span></div>
+            <div class="gridline" style="bottom:55%"><span>15g</span></div>
+            <div class="gridline" style="bottom:22%"><span>5g</span></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <div class="card-title" style="margin-bottom:12px"><span>Axon read</span></div>
+          <div class="prose">Your season peak is <b>18.2 g</b> (session_004), still far below the ~95 g concussive range. One rotation-driven hit was flagged. <b>Concussion probability</b> is trending flat. Keep neck-strengthening in your routine — it measurably lowers your personal threshold.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========= HOW AXON WORKS ========= -->
+    <section class="view" id="works">
+      <div class="sub-head"><div class="back" onclick="goBack()"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="eyebrow">The system</div><h1>How Axon Works</h1></div></div>
+      <div class="scroll">
+        <div class="card">
+          <div class="pipe">
+            <div class="node"><div class="ln"></div><div class="nd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 2C6 6 4 8.5 4 12a6 6 0 0012 0c0-3.5-2-6-6-10z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div><div><div class="nt">Sensors in the shell</div><div class="np">A BNO085 9-DOF IMU tracks linear + angular acceleration at 1000 Hz. Four FSR pressure pads read impact force front, sides, and rear.</div></div></div>
+            <div class="node"><div class="ln"></div><div class="nd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 8h4v4H8z" fill="currentColor"/></svg></div><div><div class="nt">Particle Boron</div><div class="np">The pads feed ADS1115 ADCs; everything lands on a Particle Boron over I²C. It scores each hit and publishes over LTE — no phone tether needed.</div></div></div>
+            <div class="node"><div class="ln"></div><div class="nd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M6 14a4 4 0 010-8 5 5 0 019.5 1.5A3.5 3.5 0 0114 14H6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div><div><div class="nt">The cloud</div><div class="np">Impacts stream to the Particle Cloud in milliseconds. This app subscribes to the live event feed — anywhere with a signal.</div></div></div>
+            <div class="node"><div class="nd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="5" y="2" width="10" height="16" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 15h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><div><div class="nt">Your pocket</div><div class="np">Coaches and players get a risk score and an instant alert the moment a dangerous hit lands — before a second one can.</div></div></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <div class="card-title" style="margin-bottom:12px"><span>The science</span></div>
+          <div class="prose">Axon scores risk with the <b>Rowson–Duma combined probability</b> model, which weighs linear <i>and</i> rotational acceleration together rather than a single g cutoff. Concussive hits typically reach <b>~95–100 g</b> and <b>~4500–7000 rad/s²</b>. Your personal threshold shifts with neck strength, head mass, and hydration.</div>
+          <div style="margin-top:14px">
+            <span class="pill-tag">1000 Hz</span><span class="pill-tag">&lt;50 ms detection</span><span class="pill-tag">Rowson–Duma</span><span class="pill-tag">SIGML 2026</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========= ALERTS & THRESHOLDS ========= -->
+    <section class="view" id="alerts">
+      <div class="sub-head"><div class="back" onclick="goBack()"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="eyebrow">Settings</div><h1>Alerts & Thresholds</h1></div></div>
+      <div class="scroll">
+        <div class="setting">
+          <div class="set-row"><div class="sr-txt"><div class="sr-t">Push notifications</div><div class="sr-s">Instant alert on flagged impacts</div></div><div class="tgl on" id="tgPush" onclick="this.classList.toggle('on')"></div></div>
+          <div class="set-row"><div class="sr-txt"><div class="sr-t">Vibrate on alert</div><div class="sr-s">Haptic buzz when a hit is flagged</div></div><div class="tgl on" id="tgVibrate" onclick="this.classList.toggle('on')"></div></div>
+          <div class="set-row"><div class="sr-txt"><div class="sr-t">Notify my coach</div><div class="sr-s">Send alerts to the team console</div></div><div class="tgl on" id="tgCoach" onclick="this.classList.toggle('on')"></div></div>
+          <div class="set-row"><div class="sr-txt"><div class="sr-t">Quiet hours</div><div class="sr-s">Mute non-critical between 10p and 7a</div></div><div class="tgl" id="tgQuiet" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card-title"><span>Linear g threshold</span><span class="mono" id="tG">70 g</span></div>
+          <input class="slider" id="slG" type="range" min="40" max="120" value="70" oninput="document.getElementById('tG').textContent=this.value+' g'">
+          <div class="card-title" style="margin-top:20px"><span>Angular threshold</span><span class="mono" id="tA">4500 rad/s²</span></div>
+          <input class="slider" id="slA" type="range" min="2000" max="8000" step="100" value="4500" oninput="document.getElementById('tA').textContent=this.value+' rad/s²'">
+          <div class="prose" style="margin-top:16px;font-size:13px">These are your live alert gates. Saving actually changes how your backend flags impacts, not just this screen.</div>
+        </div>
+        <button class="savebtn" onclick="saveSettings()">Save thresholds</button>
+      </div>
+    </section>
+
+    <!-- ========= USER INFO / BASELINE ========= -->
+    <section class="view" id="profileEdit">
+      <div class="sub-head"><div class="back" onclick="goBack()"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="eyebrow">Profile</div><h1>User Information</h1></div></div>
+      <div class="scroll">
+        <div class="prose" style="margin-bottom:6px">These personalize your concussion threshold. Neck strength and head mass measurably shift your risk curve.</div>
+        <div class="formrow"><label>Full name</label><input class="forminput" id="uiName"></div>
+        <div style="display:flex;gap:12px">
+          <div class="formrow" style="flex:0 0 34%"><label>Jersey</label><input class="forminput" id="uiJersey" inputmode="numeric"></div>
+          <div class="formrow" style="flex:1"><label>Position</label><input class="forminput" id="uiPosition"></div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <div class="formrow" style="flex:1"><label>Weight (lb)</label><input class="forminput" id="uiWeight" inputmode="numeric"></div>
+          <div class="formrow" style="flex:1"><label>Neck strength (lb)</label><input class="forminput" id="uiNeck" inputmode="numeric"></div>
+        </div>
+        <div class="setting" style="margin-top:16px">
+          <div class="set-row"><div class="sr-txt"><div class="sr-t">Hydration modifier</div><div class="sr-s">Adjust threshold for dehydration risk</div></div><div class="tgl on" id="uiHydration" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <button class="savebtn" onclick="saveUserInfo()">Save changes</button>
+      </div>
+    </section>
+
+  </div><!-- /viewport -->
+
+  <div class="tabbar" id="tabbar"></div>
+
+  <!-- pairing sheet -->
+  <div class="sheet-back" id="sheetBack" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <div class="sheet-grip"></div>
+    <div class="role-switch" style="margin-bottom:2px">
+      <button class="on" id="segParticle" onclick="switchPair('particle')">Particle Cloud</button>
+      <button id="segApi" onclick="switchPair('api')">My Axon API</button>
+    </div>
+
+    <div id="pairParticle">
+      <h3 style="margin-top:18px">Pair <span class="it">Axon_Main_Module</span></h3>
+      <p>Boron streams every impact to the Particle Cloud over LTE. Paste an access token to watch it live.</p>
+      <label class="slabel">Particle access token</label>
+      <input class="sinput" id="inToken" type="password" placeholder="paste token…" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="shint">Get one at <a href="https://console.particle.io/settings/access-tokens" target="_blank" rel="noopener">console.particle.io → Access Tokens</a></div>
+      <label class="slabel">Device ID</label>
+      <input class="sinput" id="inDevice" type="text" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button class="sheet-cta" onclick="pairConnect()">Connect helmet</button>
+      <button class="sheet-ghost" onclick="pairDemo()">Run in demo mode instead</button>
+    </div>
+
+    <div id="pairApi" style="display:none">
+      <h3 style="margin-top:18px">Connect <span class="it">your Axon API</span></h3>
+      <p>Your own backend receives impacts straight from the helmet, with zero Particle Cloud. Sign in to stream live.</p>
+      <label class="slabel">API URL</label>
+      <input class="sinput" id="apiUrl" type="url" placeholder="https://your-axon-api.onrender.com" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <label class="slabel">Email</label>
+      <input class="sinput" id="apiEmail" type="email" placeholder="coach@yourteam.com" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <label class="slabel">Password</label>
+      <input class="sinput" id="apiPw" type="password" placeholder="••••••••" autocomplete="off">
+      <div class="shint">Your own coach account on your Axon backend. The app stores only a session token, on this device.</div>
+      <button class="sheet-cta" onclick="apiLogin()">Sign in & stream</button>
+      <button class="sheet-ghost" onclick="pairDemo()">Run in demo mode instead</button>
+    </div>
+  </div>
+
+  <!-- alert overlay -->
+  <div class="alertlay" id="alertlay">
+    <div class="ring">⚠</div>
+    <h2>Possible concussion</h2>
+    <p>High-severity impact detected. Pull the player and evaluate.</p>
+    <div class="stat" id="alertStat"></div>
+    <button class="sheet-ghost" id="btnDismiss" style="margin-top:26px;max-width:220px">Acknowledge</button>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+"use strict";
+/* ===================================================================
+   AXON AI — helmet safety app.
+   Live path: Particle Cloud SSE from the Boron (impact_data / concussion_alert / AXON).
+   Firmware fields: g (linear, g), angAccel (rad/s²), fsr (raw), pad ("0x49/2"), status.
+   =================================================================== */
+const DEFAULT_DEVICE="e00fce68baab0b648b3d9899"; // Axon_Main_Module
+const API="https://api.particle.io";
+const APP_ROLE="player";   // this build is the ATHLETE app
+// Rowson & Duma 2013 combined probability of concussion
+const B0=-10.2,B1=0.0433,B2=0.000873,B3=-9.2e-7;
+const concProb=(g,a)=>1/(1+Math.exp(-(B0+B1*g+B2*a+B3*g*a)));
+
+const $=s=>document.querySelector(s);
+const state={
+  role:"player", mode:null,               // "live" | "demo" | "api" | null
+  conn:localStorage.getItem("axon_conn")||"particle",  // "particle" | "api"
+  token:localStorage.getItem("axon_token")||"",
+  device:localStorage.getItem("axon_device")||DEFAULT_DEVICE,
+  api:localStorage.getItem("axon_api")||"",            // your backend base URL
+  apiToken:localStorage.getItem("axon_api_token")||"",  // JWT from your API
+  user:null, impacts:[], roster:[], player:null,        // live backend data
+  es:null, gameTimer:null, gameOn:false, retry:0, series:[], peakG:0
+};
+
+/* ===== API data layer (talks to YOUR backend with the JWT) ===== */
+function apiBase(){ return (state.api||'').replace(/\/$/,''); }
+async function apiFetch(path, opts={}){
+  const r=await fetch(apiBase()+path, {
+    ...opts,
+    headers:{ 'Content-Type':'application/json', ...(state.apiToken?{Authorization:'Bearer '+state.apiToken}:{}) , ...(opts.headers||{}) }
+  });
+  let j=null; try{ j=await r.json(); }catch(_){}
+  if(!r.ok) throw new Error((j&&j.error)||('HTTP '+r.status));
+  return j;
+}
+const initials=n=>(n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+/* seed data grounded in the SIGML paper (BNO085 Experiment 2: PLA 6–18 g, PAV 105–331°/s) */
+const sessions=[
+  {date:'Aug 21, 2025',sid:'session_001',pct:8,pla:11.9,pav:226,force:2.8,lvl:'low'},
+  {date:'Aug 20, 2025',sid:'session_002',pct:16,pla:15.3,pav:290,force:3.0,lvl:'med'},
+  {date:'Aug 19, 2025',sid:'session_003',pct:3,pla:6.1,pav:105,force:1.9,lvl:'low'},
+  {date:'Aug 16, 2025',sid:'session_004',pct:22,pla:18.2,pav:331,force:3.2,lvl:'high'},
+];
+const players=[
+  {name:'Hao Chang',pos:'#52 DE',risk:8,lvl:'low',on:true},
+  {name:'Marcus Lee',pos:'#12 QB',risk:17,lvl:'med',on:true},
+  {name:'Devin Cruz',pos:'#88 WR',risk:31,lvl:'high',on:true},
+  {name:'Tyler Soli',pos:'#7 RB',risk:5,lvl:'low',on:false},
+];
+
+/* ===== ember background ===== */
+const cv=$("#ember"),cx=cv.getContext("2d");let W,H,parts=[];
+function sizeCanvas(){const d=$("#device").getBoundingClientRect();W=cv.width=d.width;H=cv.height=d.height;
+  parts=Array.from({length:22},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+.4,vy:-(Math.random()*.25+.05),vx:(Math.random()-.5)*.12,a:Math.random()*.5+.2}));}
+sizeCanvas();addEventListener("resize",sizeCanvas);
+function drawEmber(){cx.clearRect(0,0,W,H);for(const p of parts){p.y+=p.vy;p.x+=p.vx;if(p.y<-4){p.y=H+4;p.x=Math.random()*W;}
+  cx.fillStyle=`rgba(238,120,60,${p.a})`;cx.beginPath();cx.arc(p.x,p.y,p.r,0,7);cx.fill();}requestAnimationFrame(drawEmber);}
+drawEmber();
+
+/* ===== clock ===== */
+function tickClock(){const n=new Date();document.getElementById("clock").textContent=((n.getHours()%12)||12)+":"+String(n.getMinutes()).padStart(2,"0");}
+tickClock();setInterval(tickClock,10000);
+
+/* ===== toast ===== */
+let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2600);}
+
+/* ===== role + tabs ===== */
+function setRole(r,el){state.role=r;document.querySelectorAll(".role-switch button").forEach(b=>b.classList.remove("on"));el.classList.add("on");
+  // convenience: prefill the demo account for that role
+  if(el.closest('.role-switch') && $("#email")) $("#email").value = r==='coach' ? 'coach@axon.ai' : 'player@axon.ai';}
+const CHAT_ICON='M3 5a2 2 0 012-2h10a2 2 0 012 2v6a2 2 0 01-2 2H8l-4 3v-3a2 2 0 01-1-2V5z';
+const TABS={
+  player:[['home','Home','M3 9l7-6 7 6v8a1 1 0 01-1 1h-4v-5H8v5H4a1 1 0 01-1-1V9z'],
+          ['history','History','M10 5v5l3 2 M2.5 10a7.5 7.5 0 1 0 2-5.1 M2.5 4.5V8H6'],
+          ['chat','Chat',CHAT_ICON],
+          ['me','Me','M10 7a3 3 0 100-6 3 3 0 000 6z M4 18c0-3.3 2.7-5 6-5s6 1.7 6 5']],
+  coach:[['team','Team','M7 9a3 3 0 100-6 3 3 0 000 6z M13.5 9a2.5 2.5 0 100-5 M2 17c0-3 2.2-4.5 5-4.5s5 1.5 5 4.5 M13 12.5c2.4 0 4 1.4 4 4'],
+         ['history','History','M10 5v5l3 2 M2.5 10a7.5 7.5 0 1 0 2-5.1 M2.5 4.5V8H6'],
+         ['chat','Chat',CHAT_ICON],
+         ['me','Me','M10 7a3 3 0 100-6 3 3 0 000 6z M4 18c0-3.3 2.7-5 6-5s6 1.7 6 5']]
+};
+function buildTabs(active){const set=TABS[state.role];$("#tabbar").innerHTML=set.map(([id,lbl,p])=>
+  `<div class="tab ${id===active?'on':''}" onclick="go('${id}')"><svg width="24" height="24" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg>${lbl}</div>`).join('');}
+
+/* ===== navigation ===== */
+let cur='login',navStack=[];
+const TAB_IDS=['home','history','chat','me','team'];
+function go(id,record=true){
+  if(id===cur)return;
+  if(record && cur!=='login')navStack.push(cur);
+  if(TAB_IDS.includes(id))navStack=[]; // tabs reset the stack
+  const from=document.getElementById(cur),to=document.getElementById(id);
+  from.classList.remove('active');from.classList.add('exit-left');
+  setTimeout(()=>from.classList.remove('exit-left'),440);
+  to.classList.add('active');cur=id;
+  $("#tabbar").style.display=(id==='login')?'none':'flex';
+  buildTabs(id);
+  if(id==='history')renderHistory();
+  if(id==='team')renderTeam();
+  if(id==='chat')renderChat();
+  if(id==='insights'){buildChart2();renderInsights();}
+  if(id==='notifs')renderNotifs();
+  if(id==='alerts')loadSettings();
+  if(id==='profileEdit')loadUserInfo();
+  if(id==='me'&&state.user)applyUser(state.user);
+}
+function goBack(){const p=navStack.pop()||(state.role==='coach'?'team':'home');go(p,false);}
+
+/* ===== login ===== */
+function togglePw(){const i=$("#pw");i.type=i.type==='password'?'text':'password';}
+function applyUser(u){
+  state.user=u;
+  const first=(u.name||'Athlete').split(' ')[0];
+  $("#firstName").textContent=first;
+  document.querySelectorAll('.avatar,.pf-av').forEach(el=>el.textContent=initials(u.name));
+  $(".pf-name").textContent=u.name||'';
+  $(".pf-mail").textContent=u.email||'';
+  $("#roleTag").textContent = u.role==='coach' ? ('Coach · '+(u.team||'Team')) : 'Player';
+}
+async function doLogin(){
+  const base=$("#loginApi").value.trim().replace(/\/$/,''), email=$("#email").value.trim(), pw=$("#pw").value;
+  if(!base){toast('Enter your Axon API URL');return;}
+  if(!email||!pw){toast('Enter email and password');return;}
+  const b=$("#loginBtn");b.classList.add('loading');
+  try{
+    const r=await fetch(base+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
+    const j=await r.json();
+    if(!r.ok||!j.token){b.classList.remove('loading');toast(j.error||'Login failed');return;}
+    if(j.user.role!==APP_ROLE){b.classList.remove('loading');toast('This is the Athlete app — staff sign in on Axon Sideline.');return;}
+    state.api=base;state.apiToken=j.token;state.conn='api';state.role='player';
+    localStorage.setItem('axon_api',base);localStorage.setItem('axon_api_token',j.token);localStorage.setItem('axon_conn','api');
+    applyUser(j.user);
+    b.classList.remove('loading');
+    connectAPI();                                  // live stream from your backend
+    await refreshData();                            // pull real history/roster/profile FIRST
+    go(state.role==='coach'?'team':'home');         // then render with real data
+  }catch(e){b.classList.remove('loading');toast('Could not reach '+base);}
+}
+function signOut(){stop();state.gameOn=false;resetGameBtn();$("#sparkcard").classList.remove('show');navStack=[];setConn('off','Helmet not paired');
+  state.apiToken='';state.user=null;state.impacts=[];state.roster=[];state.player=null;
+  localStorage.removeItem('axon_api_token');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active','exit-left'));
+  $("#login").classList.add('active');cur='login';$("#tabbar").style.display='none';$("#loginBtn").classList.remove('loading');toast('Signed out');}
+
+/* pull all backend data for the signed-in account */
+async function refreshData(){
+  try{
+    if(state.role==='coach'){
+      const {players}=await apiFetch('/api/players'); state.roster=players||[];
+      const {impacts}=await apiFetch('/api/impacts?limit=60'); state.impacts=impacts||[];
+    }else{
+      const me=await apiFetch('/api/player/me'); state.player=me.player; state.playerStats=me.stats; state.clearance=me.clearance;
+      const {impacts}=await apiFetch('/api/player/impacts'); state.impacts=impacts||[];
+    }
+    buildChart(); loadHome();
+    if(cur==='history')renderHistory();
+    if(cur==='team')renderTeam();
+  }catch(e){ toast('Data load failed: '+e.message); }
+}
+
+/* ===== risk ring + vitals render ===== */
+function riskColor(p){return p>=.5?'var(--alert)':p>=.2?'var(--signal)':p>=.05?'var(--amber)':'var(--good)';}
+function setRing(pct){const circ=565,ring=$("#riskRing");
+  ring.style.transition='stroke-dashoffset .5s cubic-bezier(.3,.8,.3,1),stroke .4s';
+  ring.style.stroke=riskColor(pct/100);
+  ring.style.strokeDashoffset=circ-(circ*Math.min(pct,100)/100);
+  const n=$("#riskNum");n.innerHTML=Math.round(pct)+'<small>%</small>';n.style.color=riskColor(pct/100);
+}
+const PAD_MAP={"0":"pad-front","1":"pad-left","2":"pad-right","3":"pad-rear"};
+function paintPad(pad,g){document.querySelectorAll('.pad').forEach(el=>el.classList.remove('on','hot'));
+  if(!pad||pad==='-')return;const ch=pad.split('/')[1];const el=document.getElementById(PAD_MAP[ch]||'pad-front');
+  if(el)el.classList.add(g>=70?'hot':'on');}
+function pushSpark(g){state.series.push(g);if(state.series.length>40)state.series.shift();
+  const s=state.series,n=s.length;if(n<2){$("#sparkPath").setAttribute('d','');return;}
+  const Wd=320,Hd=64,max=Math.max(80,...s),y=v=>Hd-2-(v/max)*(Hd-6);
+  $("#threshLine").setAttribute('y1',y(70));$("#threshLine").setAttribute('y2',y(70));
+  let d='';s.forEach((v,i)=>{d+=(i?'L':'M')+((i/(n-1))*Wd).toFixed(1)+' '+y(v).toFixed(1)+' ';});
+  $("#sparkPath").setAttribute('d',d);}
+
+function render(d){
+  const g=+d.g||0,ang=+d.angAccel||0,fsr=+d.fsr||0,p=concProb(g,ang);
+  setRing(p*100);
+  $("#hero").classList.toggle('alert',d.status==='alert'||p>=.5);
+  $("#vG").innerHTML=g.toFixed(1)+'<small> g</small>';
+  $("#vA").innerHTML=Math.round(ang).toLocaleString()+'<small> rad/s²</small>';
+  $("#vF").innerHTML=fsr.toLocaleString();
+  $("#mG").classList.toggle('hot',g>=70);$("#mA").classList.toggle('hot',ang>=4500);$("#mF").classList.toggle('hot',fsr>=15000);
+  paintPad(d.pad,g);$("#padId").textContent=d.pad&&d.pad!=='-'?d.pad:'no contact';
+  pushSpark(g);
+}
+
+/* ===== normalize backend data -> the shapes the UI renders ===== */
+function tparse(s){ const d=new Date(String(s||'').replace(' ','T')+'Z'); return isNaN(d)?null:d; }
+function impactRow(im){
+  const g=+im.linear_g||0, ang=+im.angular_accel||0;
+  const lvl=im.severity==='concussion-risk'?'high':im.severity==='elevated'?'med':'low';
+  const d=tparse(im.created_at);
+  return { id:im.id, date:d?d.toLocaleDateString([], {month:'short',day:'numeric'}):(im.created_at||''),
+    time:d?d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'', sid:'impact_'+String(im.id).padStart(3,'0'),
+    pla:g.toFixed(1), pav:Math.round(ang), force:im.fsr?im.fsr.toLocaleString():'—',
+    pct:Math.round(concProb(g,ang)*100), lvl, g, ang, pad:im.pad };
+}
+function rosterRow(p){
+  const g=+p.last_g||0, ang=+p.last_ang||0, risk=Math.round(concProb(g,ang)*100);
+  return { name:p.name, pos:(p.jersey?('#'+p.jersey+' '):'')+(p.position||''), risk,
+    lvl:risk>=50?'high':risk>=20?'med':'low', on:(p.impact_count>0), _id:p.id, peak:Math.round(p.peak_g||0),
+    impacts:p.impact_count, flagged:p.flagged_count };
+}
+const histData=()=> (state.impacts&&state.impacts.length)? state.impacts.map(impactRow) : sessions;
+const rosterData=()=> (state.roster&&state.roster.length)? state.roster.map(rosterRow) : players;
+
+/* set the Home ring + vitals from the latest real impact */
+function loadHome(){
+  const rows=state.impacts;
+  if(rows&&rows.length){ const l=rows[0];
+    render({g:+l.linear_g,angAccel:+l.angular_accel,fsr:l.fsr||0,pad:l.pad||'-',status:l.flagged?'alert':'nominal'}); }
+  if(state.conn==='api'&&state.apiToken) setConn('live', state.player?('Live · '+(state.player.name||'you')):'Live · your Axon API');
+}
+
+/* ===== concussion alert ===== */
+function fireAlert(d){const g=+d.g||0,ang=+d.angAccel||0,p=concProb(g,ang);
+  $("#alertStat").textContent=`${g.toFixed(1)} g · ${Math.round(ang).toLocaleString()} rad/s² · ${Math.round(p*100)}% CP`;
+  $("#alertlay").classList.add('show');
+  if(navigator.vibrate)navigator.vibrate([200,90,200,90,400]);
+}
+$("#btnDismiss").onclick=()=>{$("#alertlay").classList.remove('show');if(navigator.vibrate)navigator.vibrate(0);};
+
+/* ===== connection status ===== */
+function setConn(kind,txt){const pill=$("#connPill");pill.className='status-pill '+(kind==='live'?'':kind==='demo'?'demo':'off');
+  $("#connTxt").textContent=txt;}
+
+/* ===== live: Particle SSE ===== */
+function connectLive(){
+  stop();state.mode='live';
+  if(!state.token){openSheet();return;}
+  setConn('','Connecting…');
+  fetch(`${API}/v1/devices/${state.device}?access_token=${encodeURIComponent(state.token)}`)
+    .then(r=>r.json()).then(j=>{if(j.error){toast('Token/device error: '+j.error);setConn('off','Pairing failed — check token');}
+      else{$("#devSub").textContent=`${j.name||'device'} · ${j.online?'online':'offline'} · OS ${j.system_firmware_version||'?'}`;
+        if(!j.online){setConn('off','Helmet paired · offline');toast('Helmet is offline — power it on to see live data');}}}).catch(()=>{});
+  const es=new EventSource(`${API}/v1/devices/${encodeURIComponent(state.device)}/events/?access_token=${encodeURIComponent(state.token)}`);
+  state.es=es;
+  es.addEventListener('open',()=>{state.retry=0;setConn('live','Live · LTE · Axon_Main_Module');toast('Paired with your helmet');});
+  es.addEventListener('impact_data',e=>{try{render(JSON.parse(JSON.parse(e.data).data));}catch(_){}});
+  es.addEventListener('concussion_alert',e=>{try{fireAlert(JSON.parse(JSON.parse(e.data).data));}catch(_){fireAlert({g:0,angAccel:0});}});
+  es.addEventListener('AXON',e=>{try{toast('Helmet: '+JSON.parse(e.data).data);}catch(_){}});
+  es.addEventListener('error',()=>{state.retry++;
+    if(state.retry>=4){stop();setConn('off','Stream stopped — check token / device');toast('Could not stream — verify token and that the helmet is online');}
+    else setConn('','Reconnecting…');});
+}
+/* ===== demo simulation ===== */
+function connectDemo(){
+  stop();state.mode='demo';setConn('demo','Demo · simulated impacts');
+  state.gameTimer=setInterval(()=>{
+    const roll=Math.random();let g,ang;
+    if(roll>.94){g=70+Math.random()*55;ang=4200+Math.random()*3500;}
+    else if(roll>.7){g=25+Math.random()*35;ang=1200+Math.random()*2600;}
+    else{g=6+Math.random()*18;ang=200+Math.random()*1400;}
+    const ch=Math.floor(Math.random()*4),fsr=Math.round(g*180+Math.random()*1200);
+    const d={g:+g.toFixed(1),angAccel:Math.round(ang),fsr,pad:`0x49/${ch}`,status:(g>=70||ang>=4500)?'alert':'nominal'};
+    render(d);if(d.status==='alert'&&concProb(d.g,d.angAccel)>=.5)fireAlert(d);
+  },1000);
+}
+function stop(){if(state.es){state.es.close();state.es=null;}if(state.gameTimer){clearInterval(state.gameTimer);state.gameTimer=null;}}
+
+/* ===== your own Axon API (SSE) — the Particle-Cloud-free path ===== */
+function normApi(d){return {g:+d.linear_g||0,angAccel:+d.angular_accel||0,fsr:d.fsr!=null?+d.fsr:0,
+  pad:d.pad||'-',status:(d.flagged||d.severity==='concussion-risk')?'alert':'nominal'};}
+function connectAPI(){
+  stop();state.mode='api';state.retry=0;
+  const base=(state.api||'').replace(/\/$/,'');
+  if(!base||!state.apiToken){openSheet();return;}
+  setConn('','Connecting…');
+  const es=new EventSource(`${base}/api/stream?token=${encodeURIComponent(state.apiToken)}`);
+  state.es=es;
+  es.addEventListener('open',()=>{state.retry=0;setConn('live','Live · your Axon API');toast('Connected to your Axon API');});
+  es.addEventListener('impact',e=>{try{const raw=JSON.parse(e.data);render(normApi(raw));
+    state.impacts.unshift(raw);if(state.impacts.length>80)state.impacts.pop();
+    if(cur==='history')renderHistory();if(cur==='home')buildChart();}catch(_){}});
+  es.addEventListener('concussion_alert',e=>{try{fireAlert(normApi(JSON.parse(e.data)));}catch(_){}});
+  es.addEventListener('message',e=>{try{onIncomingMessage(JSON.parse(e.data));}catch(_){}});
+  es.addEventListener('error',()=>{state.retry++;
+    if(state.retry>=4){stop();setConn('off','Stream stopped — check API');toast('Could not reach your Axon API');}
+    else setConn('','Reconnecting…');});
+}
+async function apiLogin(){
+  const base=$("#apiUrl").value.trim().replace(/\/$/,''),em=$("#apiEmail").value.trim(),pw=$("#apiPw").value;
+  if(!base||!em||!pw){toast('Enter API URL, email, and password');return;}
+  try{
+    const r=await fetch(`${base}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,password:pw})});
+    const j=await r.json();
+    if(!r.ok||!j.token){toast(j.error||'Login failed');return;}
+    state.api=base;state.apiToken=j.token;state.conn='api';
+    localStorage.setItem('axon_api',base);localStorage.setItem('axon_api_token',j.token);localStorage.setItem('axon_conn','api');
+    $("#devSub").textContent='Your Axon API · '+(j.user?.name||'connected');closeSheet();
+    state.gameOn=true;setGameBtnLive();$("#sparkcard").classList.add('show');state.series=[];
+    connectAPI();
+  }catch(e){toast('Could not reach '+base);}
+}
+/* if a connection is already saved, start monitoring the moment the app opens */
+function autoReconnect(){
+  if(state.conn==='api'&&state.api&&state.apiToken){$("#devSub").textContent='Your Axon API · connected';connectAPI();}
+  else if(state.token){$("#devSub").textContent='Axon_Main_Module · paired';state.retry=0;connectLive();}
+}
+
+/* ===== Start Game ===== */
+function setGameBtnLive(){const b=$("#gameBtn");if(b.classList.contains('live'))return;
+  b.classList.add('live');b.querySelector('svg')?.remove();
+  if(!b.querySelector('.rec'))b.insertAdjacentHTML('afterbegin','<div class="rec"></div>');
+  $("#gameLabel").textContent='Game Live · Recording';}
+function resetGameBtn(){const b=$("#gameBtn");b.classList.remove('live');b.querySelector('.rec')?.remove();
+  if(!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin','<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4l11 6-11 6V4z"/></svg>');
+  $("#gameLabel").textContent='Start Game';}
+function toggleGame(){
+  state.gameOn=!state.gameOn;
+  if(state.gameOn){
+    setGameBtnLive();$("#sparkcard").classList.add('show');state.series=[];
+    if(state.conn==='api'&&state.api&&state.apiToken){connectAPI();toast('Recording — streaming from your Axon API');}
+    else if(state.token){connectLive();toast('Recording — streaming from your Boron');}
+    else{connectDemo();toast('No source yet — running demo. Pair in Profile → Device.');}
+  }else{
+    resetGameBtn();$("#sparkcard").classList.remove('show');stop();setConn('off','Helmet idle');
+  }
+}
+
+/* ===== pairing sheet ===== */
+function switchPair(m){document.getElementById('segParticle').classList.toggle('on',m==='particle');
+  document.getElementById('segApi').classList.toggle('on',m==='api');
+  document.getElementById('pairParticle').style.display=m==='particle'?'':'none';
+  document.getElementById('pairApi').style.display=m==='api'?'':'none';}
+function openSheet(){$("#inToken").value=state.token;$("#inDevice").value=state.device;$("#apiUrl").value=state.api;
+  switchPair(state.conn);$("#sheetBack").classList.add('show');$("#sheet").classList.add('show');}
+function closeSheet(){$("#sheetBack").classList.remove('show');$("#sheet").classList.remove('show');}
+function pairConnect(){const t=$("#inToken").value.trim(),d=$("#inDevice").value.trim()||DEFAULT_DEVICE;
+  if(!t){toast('Paste an access token first');return;}
+  state.token=t;state.device=d;state.conn='particle';
+  localStorage.setItem('axon_token',t);localStorage.setItem('axon_device',d);localStorage.setItem('axon_conn','particle');
+  $("#devSub").textContent='Axon_Main_Module · paired';closeSheet();
+  state.gameOn=true;setGameBtnLive();$("#sparkcard").classList.add('show');state.series=[];
+  connectLive();}
+function pairDemo(){closeSheet();state.gameOn=true;setGameBtnLive();$("#sparkcard").classList.add('show');state.series=[];connectDemo();}
+
+/* ===== chart ===== */
+function buildChart(){const c=$("#chart");c.querySelectorAll('.bar-col').forEach(e=>e.remove());
+  const data=[...sessions].reverse();const max=24;
+  data.forEach((s,i)=>{const col=document.createElement('div');col.className='bar-col';
+    col.innerHTML=`<div class="bar ${s.lvl==='high'?'hi':''}"></div><div class="bar-x">${s.date.split(',')[0].replace('Aug ','8/')}</div>`;
+    c.appendChild(col);setTimeout(()=>{col.querySelector('.bar').style.height=(s.pla/max*100)+'%';},120+i*90);});}
+
+/* ===== AI bar ===== */
+const aiAnswers=[
+  'Your peak linear accel today is 11.9 g — well under the 70 g alert line. All clear, keep monitoring.',
+  'session_002 hit 15.3 g with 290°/s rotation. I\'d run a sideline SCAT check before the next series.',
+  'Concussion probability trended up ~7% over your last 3 games. Consider lighter contact in practice.',
+  'Neck strength and hydration both shift your personal threshold — stay hydrated and report any headache or light sensitivity.'
+];
+let aiIdx=0;function askAI(){const v=$("#aiInput").value.trim();$("#aiInput").value='';
+  if(!v){toast('Ask about g, rotation, risk trends, or safety');return;}
+  toast(aiAnswers[aiIdx%aiAnswers.length]);aiIdx++;}
+
+/* ===== history ===== */
+const lvlColor=l=>l==='high'?'var(--alert)':l==='med'?'var(--amber)':'var(--good)';
+function renderHistory(){const rows=histData();
+  $("#histList").innerHTML=
+  `<div class="section-h" style="margin-top:6px"><h2 class="mono" style="font-size:14px;color:var(--dim);font-weight:600">${rows.length} impacts · Axon_Main_Module</h2><a href="#" onclick="go('insights');return false">Insights →</a></div>`+
+  (rows.length?rows.map((s,i)=>`<div class="session" style="animation:rise .5s ${.05+i*.05}s both">
+    <div class="session-head" onclick="openSession(${i})">
+      <div><div class="s-date">${s.date}</div><div class="s-sub">${s.sid} · ${s.time||''}</div></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="risk-chip ${s.lvl}">${s.pct}% risk</div>
+        <svg class="chev" style="transform:rotate(-90deg)" width="13" height="8" viewBox="0 0 13 8" fill="none"><path d="M1 1l5.5 5L12 1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </div></div></div>`).join(''):'<div class="empty">No impacts logged yet. They appear here live as they happen.</div>');}
+
+/* ===== session (impact) detail ===== */
+function openSession(i){const s=histData()[i];if(!s)return;$("#sessTitle").textContent=s.sid;
+  const ang=s.pav!=null?s.pav:s.ang;
+  $("#sessBody").innerHTML=`
+    <div class="card hero" style="padding:22px 20px 20px">
+      <div class="ring-center" style="position:static">
+        <div class="big" style="color:${lvlColor(s.lvl)}">${s.pct}<small>%</small></div>
+        <div class="lbl">Concussion Probability</div>
+      </div>
+      <div class="status-pill ${s.lvl==='low'?'':'demo'}" style="margin-top:16px"><span class="dot"></span> ${s.date}${s.time?' · '+s.time:''}</div>
+    </div>
+    <div class="bigstat" style="margin-top:14px">
+      <div class="bs"><div class="bs-v">${s.pla}<small> g</small></div><div class="bs-l">Peak linear accel</div></div>
+      <div class="bs"><div class="bs-v">${(+ang).toLocaleString()}<small> rad/s²</small></div><div class="bs-l">Peak angular accel</div></div>
+      <div class="bs"><div class="bs-v">${s.force}</div><div class="bs-l">Peak pad force</div></div>
+      <div class="bs"><div class="bs-v" style="color:${lvlColor(s.lvl)}">${(s.pad&&s.pad!=='-')?s.pad:'—'}</div><div class="bs-l">Impact pad</div></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-title" style="margin-bottom:12px"><span>Axon read</span></div>
+      <div class="prose">${s.lvl==='high'?'A concussion-level hit: '+s.pla+' g / '+(+ang).toLocaleString()+' rad/s². The trainer is alerted and a SCAT check is recommended before return to play.':s.lvl==='med'?'A moderate impact at '+s.pla+' g. Below the alert line but worth noting.':'Routine contact. Every metric sat comfortably under threshold.'}</div>
+    </div>
+    <button class="sheet-ghost" style="margin-top:16px" onclick="go('chat')">Message the trainer about this</button>`;
+  go('session');}
+
+/* ===== charts (home + insights) share the same real data ===== */
+function buildBars(elId){const c=document.getElementById(elId);if(!c)return;c.querySelectorAll('.bar-col').forEach(e=>e.remove());
+  const rows=histData().slice(0,7).reverse();const max=Math.max(24,...rows.map(s=>+s.pla));
+  rows.forEach((s,i)=>{const col=document.createElement('div');col.className='bar-col';
+    col.innerHTML=`<div class="bar ${s.lvl==='high'?'hi':''}"></div><div class="bar-x">${(s.date||'').split(',')[0]}</div>`;
+    c.appendChild(col);setTimeout(()=>{col.querySelector('.bar').style.height=Math.min(100,(+s.pla/max*100))+'%';},120+i*80);});}
+function buildChart(){buildBars('chart');}
+function buildChart2(){buildBars('chart2');}
+
+/* ===== player detail (coach) — loads that player's real impacts ===== */
+async function openPlayer(i){const p=rosterData()[i];if(!p)return;$("#plTitle").textContent=p.name;
+  $("#plBody").innerHTML='<div class="empty">Loading…</div>';go('player');
+  let impacts=[]; if(p._id){ try{ impacts=(await apiFetch('/api/impacts?player_id='+p._id+'&limit=40')).impacts||[]; }catch(_){} }
+  const last=impacts[0]; const lg=last?+last.linear_g:0, la=last?+last.angular_accel:0;
+  const flagged=impacts.filter(x=>x.flagged).length;
+  $("#plBody").innerHTML=`
+    <div class="card hero" style="padding:22px 20px 20px">
+      <div class="ring-center" style="position:static">
+        <div class="big" style="color:${lvlColor(p.lvl)}">${p.risk}<small>%</small></div>
+        <div class="lbl">Concussion Risk</div>
+      </div>
+      <div class="status-pill ${p.on?'':'off'}" style="margin-top:16px"><span class="dot"></span> ${p.on?'Monitored':'No data yet'} · ${p.pos||''}</div>
+    </div>
+    <div class="bigstat" style="margin-top:14px">
+      <div class="bs"><div class="bs-v">${last?lg.toFixed(1):'—'}<small> g</small></div><div class="bs-l">Last linear peak</div></div>
+      <div class="bs"><div class="bs-v">${last?la.toLocaleString():'—'}<small> rad/s²</small></div><div class="bs-l">Last rotation</div></div>
+      <div class="bs"><div class="bs-v">${p.impacts||0}</div><div class="bs-l">Total impacts</div></div>
+      <div class="bs"><div class="bs-v" style="color:${flagged?'var(--alert)':'var(--good)'}">${flagged}</div><div class="bs-l">Flagged hits</div></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-title" style="margin-bottom:10px"><span>Recent impacts</span><span>${impacts.length}</span></div>
+      ${impacts.slice(0,6).map(im=>{const r=impactRow(im);return `<div class="ev"><div class="ei" style="background:${r.lvl==='high'?'rgba(255,59,70,.16)':'var(--panel2)'};color:${lvlColor(r.lvl)}">${r.pct}</div><div class="em"><div class="et">${r.pla} g · ${(+r.pav).toLocaleString()} rad/s²</div><div class="es">${r.date} ${r.time}</div></div></div>`;}).join('')||'<div class="empty" style="padding:12px 0">No impacts yet.</div>'}
+    </div>
+    <button class="sheet-ghost" style="margin-top:14px" onclick="go('chat')">Message ${p.name.split(' ')[0]}</button>`;
+}
+
+/* ===== team ===== */
+function renderTeam(){const roster=rosterData();
+  $("#roster").innerHTML=roster.length?roster.map((p,i)=>`
+  <div class="player-row" style="animation:rise .5s ${.05+i*.07}s both" onclick="openPlayer(${i})">
+    <div class="pr-av">${initials(p.name)}</div>
+    <div><div class="pr-name">${p.name}</div><div class="pr-meta">${p.on?'<span class="live-dot"></span> Monitored · ':'No data · '}${p.pos||''}</div></div>
+    <div class="mini-gauge ${p.lvl}"><b>${p.risk}%</b><span>risk</span></div></div>`).join(''):'<div class="empty">No players yet. Add one from the roster.</div>';
+  $("#onlineCount").textContent=roster.filter(p=>p.on).length;
+  const tn=document.getElementById('teamName'); if(tn&&state.user&&state.user.team)tn.textContent=state.user.team;
+  const badge=document.querySelector('.tb-badge'); if(badge&&state.user&&state.user.team)badge.textContent=state.user.team[0].toUpperCase();}
+function startAll(){const b=$("#allBtn");if(b.classList.contains('live'))return;b.classList.add('live');b.querySelector('svg').outerHTML='<div class="rec"></div>';
+  b.querySelector('span').textContent='All Games Live';toast('Monitoring '+players.filter(p=>p.on).length+' players live');}
+
+/* ===== chat (real messages persisted to your backend) ===== */
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function chatBubble(m){
+  const mine=(state.role==='player'&&m.sender==='player')||(state.role==='coach'&&m.sender==='trainer');
+  const d=tparse(m.created_at); const t=d?d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
+  return `<div class="msg-row ${mine?'out':'in'}"><div class="bubble">${escapeHtml(m.body)}</div><div class="msg-time">${t}</div></div>`;
+}
+async function renderChat(){
+  const s=$("#chatScroll");
+  $(".ch-name").textContent = state.role==='coach' ? (state.roster[0]?.name||'Player') : 'Athletic Trainer';
+  try{
+    if(state.role==='coach'){
+      state.chatPid=state.roster[0]?.id||null;
+      const {messages}=state.chatPid?await apiFetch('/api/messages?player_id='+state.chatPid):{messages:[]};
+      state.chat=messages||[];
+    }else{
+      const {messages}=await apiFetch('/api/messages'); state.chat=messages||[];
+    }
+  }catch(e){ state.chat=[]; }
+  s.innerHTML = state.chat.length? state.chat.map(chatBubble).join('')
+    : '<div class="empty">No messages yet. Say hello to your '+(state.role==='coach'?'player':'trainer')+'.</div>';
+  setTimeout(()=>s.scrollTop=s.scrollHeight,40);
+}
+function onIncomingMessage(m){
+  state.chat=state.chat||[];
+  // avoid echoing our own just-sent message twice
+  if(state.chat.some(x=>x.id===m.id))return;
+  state.chat.push(m);
+  if(cur==='chat'){const s=$("#chatScroll");if(state.chat.length===1)s.innerHTML='';s.insertAdjacentHTML('beforeend',chatBubble(m));s.scrollTop=s.scrollHeight;}
+}
+async function sendMsg(){
+  const inp=$("#msgInput"),v=inp.value.trim();if(!v)return;inp.value='';
+  const path=(state.role==='coach'&&state.chatPid)?'/api/messages?player_id='+state.chatPid:'/api/messages';
+  try{
+    const {message}=await apiFetch(path,{method:'POST',body:JSON.stringify({body:v})});
+    state.chat=state.chat||[]; state.chat.push(message);
+    const s=$("#chatScroll"); if(state.chat.length===1)s.innerHTML='';
+    s.insertAdjacentHTML('beforeend',chatBubble(message)); s.scrollTop=s.scrollHeight;
+  }catch(e){ toast('Send failed: '+e.message); }
+}
+
+/* ===== profile / settings / check-in / notifications / insights ===== */
+async function loadUserInfo(){
+  let p=state.player;
+  if(state.role==='player'&&!p){ try{ p=(await apiFetch('/api/player/me')).player; state.player=p; }catch(_){}}
+  const u=state.user||{};
+  $("#uiName").value=(p&&p.name)||u.name||'';
+  $("#uiJersey").value=(p&&p.jersey)||'';
+  $("#uiPosition").value=(p&&p.position)||'';
+  $("#uiWeight").value=(p&&p.weight)||'';
+  $("#uiNeck").value=(p&&p.neck_strength)||'';
+  $("#uiHydration").classList.toggle('on', !p || p.hydration!==0);
+}
+async function saveUserInfo(){
+  const name=$("#uiName").value.trim();
+  const payload={ name, jersey:parseInt($("#uiJersey").value)||null, position:$("#uiPosition").value.trim()||null,
+    weight:parseFloat($("#uiWeight").value)||null, neck_strength:parseFloat($("#uiNeck").value)||null,
+    hydration:$("#uiHydration").classList.contains('on')?1:0 };
+  try{
+    if(state.role==='player'){ const {player}=await apiFetch('/api/player/me',{method:'PATCH',body:JSON.stringify(payload)}); state.player=player; }
+    if(name){ const {user}=await apiFetch('/api/me',{method:'PATCH',body:JSON.stringify({name})}); applyUser(user); }
+    toast('Profile saved ✓'); goBack();
+  }catch(e){ toast('Save failed: '+e.message); }
+}
+function loadSettings(){
+  const s=(state.user&&state.user.settings)||{g:70,ang:4500,push:true,vibrate:true,notifyCoach:true,quiet:false};
+  $("#tgPush").classList.toggle('on',!!s.push); $("#tgVibrate").classList.toggle('on',!!s.vibrate);
+  $("#tgCoach").classList.toggle('on',!!s.notifyCoach); $("#tgQuiet").classList.toggle('on',!!s.quiet);
+  $("#slG").value=s.g; $("#tG").textContent=s.g+' g'; $("#slA").value=s.ang; $("#tA").textContent=s.ang+' rad/s²';
+}
+async function saveSettings(){
+  const s={ push:$("#tgPush").classList.contains('on'), vibrate:$("#tgVibrate").classList.contains('on'),
+    notifyCoach:$("#tgCoach").classList.contains('on'), quiet:$("#tgQuiet").classList.contains('on'),
+    g:parseInt($("#slG").value), ang:parseInt($("#slA").value) };
+  try{ const {user}=await apiFetch('/api/me',{method:'PATCH',body:JSON.stringify({settings:s})}); state.user=user; toast('Thresholds saved ✓'); goBack(); }
+  catch(e){ toast('Save failed: '+e.message); }
+}
+async function checkin(status){
+  try{ await apiFetch('/api/player/checkin',{method:'POST',body:JSON.stringify({status})});
+    $("#checkinState").textContent = status==='ok'?'feeling good ✓':'symptoms logged';
+    toast(status==='ok'?'Logged — feeling good ✓':'Logged — your trainer is notified');
+  }catch(e){ toast('Check-in failed: '+e.message); }
+}
+function renderNotifs(){
+  const el=$("#notifList");const flagged=(state.impacts||[]).filter(x=>x.flagged).slice(0,12);
+  el.innerHTML = flagged.length? flagged.map(im=>{const r=impactRow(im);
+    return `<div class="notif alert"><div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 3l8 14H2L10 3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 8v4M10 15h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><div><div class="nt">Concussion alert — ${r.pla} g impact</div><div class="ns">${r.sid} · ${(+r.pav).toLocaleString()} rad/s²</div></div><div class="nx">${r.date}</div></div>`;
+  }).join('') : '<div class="empty">No alerts. Every hit has been under threshold.</div>';
+}
+function renderInsights(){
+  const rows=histData();const n=rows.length||1;
+  const avgG=(rows.reduce((a,s)=>a+ +s.pla,0)/n).toFixed(1);
+  const avgA=Math.round(rows.reduce((a,s)=>a+ +(s.pav!=null?s.pav:s.ang),0)/n);
+  const flagged=rows.filter(s=>s.lvl==='high').length;
+  const el=$("#insights .bigstat"); if(el) el.innerHTML=`
+    <div class="bs"><div class="bs-v" style="color:var(--good)">${avgG}<small> g</small></div><div class="bs-l">Avg peak linear</div></div>
+    <div class="bs"><div class="bs-v">${avgA.toLocaleString()}<small> rad/s²</small></div><div class="bs-l">Avg peak rotation</div></div>
+    <div class="bs"><div class="bs-v">${rows.length}</div><div class="bs-l">Impacts logged</div></div>
+    <div class="bs"><div class="bs-v" style="color:${flagged?'var(--amber)':'var(--good)'}">${flagged}</div><div class="bs-l">Flagged impacts</div></div>`;
+}
+
+/* ===== boot ===== */
+$("#tabbar").style.display='none';
+$("#inDevice").value=state.device;
+$("#loginApi").value=state.api||'';
+if(state.conn==='api'&&state.apiToken)$("#devSub").textContent='Your Axon API · connected';
+else if(state.token)$("#devSub").textContent='Axon_Main_Module · paired';
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+/* restore a saved session so a refresh keeps you logged in */
+(async function restore(){
+  if(state.conn==='api'&&state.api&&state.apiToken){
+    try{
+      const {user}=await apiFetch('/api/me');
+      if(user.role!==APP_ROLE) return;                 // account belongs to the other app
+      applyUser(user); state.role='player';
+      connectAPI(); await refreshData(); go('home');
+    }catch(_){ /* token expired -> stay on the login screen */ }
+  }
+})();
+</script>
+</body>
+</html>
