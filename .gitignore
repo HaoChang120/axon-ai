@@ -1,0 +1,4 @@
+# internal docs: device IDs, credentials, handoff notes. Never publish.
+AXON_CONTEXT.md
+WORKFLOW.md
+.DS_Store
