@@ -55,6 +55,21 @@ db.exec(`
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  -- a physical helmet: the firmware authenticates with device_key and posts impacts
+  CREATE TABLE IF NOT EXISTS devices (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id   TEXT UNIQUE NOT NULL,   -- Particle device id (or any hardware id)
+    device_key  TEXT NOT NULL,          -- shared secret the firmware sends in X-Device-Key
+    owner_id    INTEGER,                -- coach account that registered it
+    player_id   INTEGER,                -- which player currently wears it
+    name        TEXT,
+    last_seen   TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (owner_id)  REFERENCES users(id)   ON DELETE CASCADE,
+    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE SET NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_devices_owner ON devices(owner_id);
+
   CREATE INDEX IF NOT EXISTS idx_players_owner ON players(owner_id);
   CREATE INDEX IF NOT EXISTS idx_impacts_player ON impacts(player_id);
   CREATE INDEX IF NOT EXISTS idx_checkins_player ON checkins(player_id);

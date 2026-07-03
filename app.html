@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Axon">
 <meta name="theme-color" content="#100d0a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
 <title>Axon AI — Helmet Safety</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12,200..800;48,200..800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -640,20 +643,36 @@ input{font-family:var(--disp)}
   <div class="sheet-back" id="sheetBack" onclick="closeSheet()"></div>
   <div class="sheet" id="sheet">
     <div class="sheet-grip"></div>
-    <h3>Pair <span class="it">Axon_Main_Module</span></h3>
-    <p>Your Boron streams every impact to the Particle Cloud over LTE. Paste an access token to watch it live.</p>
-    <label class="slabel">Particle access token</label>
-    <input class="sinput" id="inToken" type="password" placeholder="paste token…" autocomplete="off" autocapitalize="off" spellcheck="false">
-    <div class="shint">Get one at <a href="https://console.particle.io/settings/access-tokens" target="_blank" rel="noopener">console.particle.io → Access Tokens</a></div>
-    <label class="slabel">Device ID</label>
-    <input class="sinput" id="inDevice" type="text" autocomplete="off" autocapitalize="off" spellcheck="false">
-    <div class="steps">
-      <div class="st"><span class="num">1</span><div>Sign in to <b>console.particle.io</b> with Google (haochang164@gmail.com).</div></div>
-      <div class="st"><span class="num">2</span><div>User menu → <b>Access Tokens</b> → <b>Create a new access token</b>, copy it.</div></div>
-      <div class="st"><span class="num">3</span><div>Paste above → <b>Connect</b>. Live data flows into every screen.</div></div>
+    <div class="role-switch" style="margin-bottom:2px">
+      <button class="on" id="segParticle" onclick="switchPair('particle')">Particle Cloud</button>
+      <button id="segApi" onclick="switchPair('api')">My Axon API</button>
     </div>
-    <button class="sheet-cta" onclick="pairConnect()">Connect helmet</button>
-    <button class="sheet-ghost" onclick="pairDemo()">Run in demo mode instead</button>
+
+    <div id="pairParticle">
+      <h3 style="margin-top:18px">Pair <span class="it">Axon_Main_Module</span></h3>
+      <p>Boron streams every impact to the Particle Cloud over LTE. Paste an access token to watch it live.</p>
+      <label class="slabel">Particle access token</label>
+      <input class="sinput" id="inToken" type="password" placeholder="paste token…" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="shint">Get one at <a href="https://console.particle.io/settings/access-tokens" target="_blank" rel="noopener">console.particle.io → Access Tokens</a></div>
+      <label class="slabel">Device ID</label>
+      <input class="sinput" id="inDevice" type="text" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button class="sheet-cta" onclick="pairConnect()">Connect helmet</button>
+      <button class="sheet-ghost" onclick="pairDemo()">Run in demo mode instead</button>
+    </div>
+
+    <div id="pairApi" style="display:none">
+      <h3 style="margin-top:18px">Connect <span class="it">your Axon API</span></h3>
+      <p>Your own backend receives impacts straight from the helmet, with zero Particle Cloud. Sign in to stream live.</p>
+      <label class="slabel">API URL</label>
+      <input class="sinput" id="apiUrl" type="url" placeholder="https://your-axon-api.onrender.com" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <label class="slabel">Email</label>
+      <input class="sinput" id="apiEmail" type="email" placeholder="coach@yourteam.com" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <label class="slabel">Password</label>
+      <input class="sinput" id="apiPw" type="password" placeholder="••••••••" autocomplete="off">
+      <div class="shint">Your own coach account on your Axon backend. The app stores only a session token, on this device.</div>
+      <button class="sheet-cta" onclick="apiLogin()">Sign in & stream</button>
+      <button class="sheet-ghost" onclick="pairDemo()">Run in demo mode instead</button>
+    </div>
   </div>
 
   <!-- alert overlay -->
@@ -683,9 +702,12 @@ const concProb=(g,a)=>1/(1+Math.exp(-(B0+B1*g+B2*a+B3*g*a)));
 
 const $=s=>document.querySelector(s);
 const state={
-  role:"player", mode:null,               // "live" | "demo" | null
+  role:"player", mode:null,               // "live" | "demo" | "api" | null
+  conn:localStorage.getItem("axon_conn")||"particle",  // "particle" | "api"
   token:localStorage.getItem("axon_token")||"",
   device:localStorage.getItem("axon_device")||DEFAULT_DEVICE,
+  api:localStorage.getItem("axon_api")||"",            // your backend base URL
+  apiToken:localStorage.getItem("axon_api_token")||"",  // JWT from your API
   es:null, gameTimer:null, gameOn:false, retry:0, series:[], peakG:0
 };
 
@@ -841,8 +863,43 @@ function connectDemo(){
   },1000);
 }
 function stop(){if(state.es){state.es.close();state.es=null;}if(state.gameTimer){clearInterval(state.gameTimer);state.gameTimer=null;}}
-/* if a token is already saved, start monitoring the moment the app opens */
-function autoReconnect(){ if(state.token){$("#devSub").textContent='Axon_Main_Module · paired';state.retry=0;connectLive();} }
+
+/* ===== your own Axon API (SSE) — the Particle-Cloud-free path ===== */
+function normApi(d){return {g:+d.linear_g||0,angAccel:+d.angular_accel||0,fsr:d.fsr!=null?+d.fsr:0,
+  pad:d.pad||'-',status:(d.flagged||d.severity==='concussion-risk')?'alert':'nominal'};}
+function connectAPI(){
+  stop();state.mode='api';state.retry=0;
+  const base=(state.api||'').replace(/\/$/,'');
+  if(!base||!state.apiToken){openSheet();return;}
+  setConn('','Connecting…');
+  const es=new EventSource(`${base}/api/stream?token=${encodeURIComponent(state.apiToken)}`);
+  state.es=es;
+  es.addEventListener('open',()=>{state.retry=0;setConn('live','Live · your Axon API');toast('Connected to your Axon API');});
+  es.addEventListener('impact',e=>{try{render(normApi(JSON.parse(e.data)));}catch(_){}});
+  es.addEventListener('concussion_alert',e=>{try{fireAlert(normApi(JSON.parse(e.data)));}catch(_){}});
+  es.addEventListener('error',()=>{state.retry++;
+    if(state.retry>=4){stop();setConn('off','Stream stopped — check API');toast('Could not reach your Axon API');}
+    else setConn('','Reconnecting…');});
+}
+async function apiLogin(){
+  const base=$("#apiUrl").value.trim().replace(/\/$/,''),em=$("#apiEmail").value.trim(),pw=$("#apiPw").value;
+  if(!base||!em||!pw){toast('Enter API URL, email, and password');return;}
+  try{
+    const r=await fetch(`${base}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,password:pw})});
+    const j=await r.json();
+    if(!r.ok||!j.token){toast(j.error||'Login failed');return;}
+    state.api=base;state.apiToken=j.token;state.conn='api';
+    localStorage.setItem('axon_api',base);localStorage.setItem('axon_api_token',j.token);localStorage.setItem('axon_conn','api');
+    $("#devSub").textContent='Your Axon API · '+(j.user?.name||'connected');closeSheet();
+    state.gameOn=true;setGameBtnLive();$("#sparkcard").classList.add('show');state.series=[];
+    connectAPI();
+  }catch(e){toast('Could not reach '+base);}
+}
+/* if a connection is already saved, start monitoring the moment the app opens */
+function autoReconnect(){
+  if(state.conn==='api'&&state.api&&state.apiToken){$("#devSub").textContent='Your Axon API · connected';connectAPI();}
+  else if(state.token){$("#devSub").textContent='Axon_Main_Module · paired';state.retry=0;connectLive();}
+}
 
 /* ===== Start Game ===== */
 function setGameBtnLive(){const b=$("#gameBtn");if(b.classList.contains('live'))return;
@@ -856,19 +913,26 @@ function toggleGame(){
   state.gameOn=!state.gameOn;
   if(state.gameOn){
     setGameBtnLive();$("#sparkcard").classList.add('show');state.series=[];
-    if(state.token){connectLive();toast('Recording — streaming from your Boron');}
-    else{connectDemo();toast('No token yet — running demo. Pair in Profile → Device.');}
+    if(state.conn==='api'&&state.api&&state.apiToken){connectAPI();toast('Recording — streaming from your Axon API');}
+    else if(state.token){connectLive();toast('Recording — streaming from your Boron');}
+    else{connectDemo();toast('No source yet — running demo. Pair in Profile → Device.');}
   }else{
     resetGameBtn();$("#sparkcard").classList.remove('show');stop();setConn('off','Helmet idle');
   }
 }
 
 /* ===== pairing sheet ===== */
-function openSheet(){$("#inToken").value=state.token;$("#inDevice").value=state.device;$("#sheetBack").classList.add('show');$("#sheet").classList.add('show');}
+function switchPair(m){document.getElementById('segParticle').classList.toggle('on',m==='particle');
+  document.getElementById('segApi').classList.toggle('on',m==='api');
+  document.getElementById('pairParticle').style.display=m==='particle'?'':'none';
+  document.getElementById('pairApi').style.display=m==='api'?'':'none';}
+function openSheet(){$("#inToken").value=state.token;$("#inDevice").value=state.device;$("#apiUrl").value=state.api;
+  switchPair(state.conn);$("#sheetBack").classList.add('show');$("#sheet").classList.add('show');}
 function closeSheet(){$("#sheetBack").classList.remove('show');$("#sheet").classList.remove('show');}
 function pairConnect(){const t=$("#inToken").value.trim(),d=$("#inDevice").value.trim()||DEFAULT_DEVICE;
   if(!t){toast('Paste an access token first');return;}
-  state.token=t;state.device=d;localStorage.setItem('axon_token',t);localStorage.setItem('axon_device',d);
+  state.token=t;state.device=d;state.conn='particle';
+  localStorage.setItem('axon_token',t);localStorage.setItem('axon_device',d);localStorage.setItem('axon_conn','particle');
   $("#devSub").textContent='Axon_Main_Module · paired';closeSheet();
   state.gameOn=true;setGameBtnLive();$("#sparkcard").classList.add('show');state.series=[];
   connectLive();}
@@ -991,7 +1055,9 @@ function sendMsg(){const inp=$("#msgInput"),v=inp.value.trim();if(!v)return;inp.
 /* ===== boot ===== */
 $("#tabbar").style.display='none';
 $("#inDevice").value=state.device;
-if(state.token)$("#devSub").textContent='Axon_Main_Module · paired';
+if(state.conn==='api'&&state.apiToken)$("#devSub").textContent='Your Axon API · connected';
+else if(state.token)$("#devSub").textContent='Axon_Main_Module · paired';
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>

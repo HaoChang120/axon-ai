@@ -60,6 +60,84 @@ function ensureDemoPlayer() {
   return p.id;
 }
 const DEMO_PLAYER = ensureDemoPlayer();
+const DEMO_OWNER = db.prepare('SELECT owner_id FROM players WHERE id = ?').get(DEMO_PLAYER).owner_id;
+
+// =====================================================================
+//  LIVE EVENT HUB — Server-Sent Events. This is your own realtime layer,
+//  replacing Particle Cloud's event stream. The firmware POSTs to
+//  /api/ingest; every connected app gets the impact pushed instantly.
+// =====================================================================
+const crypto = require('node:crypto');
+const clients = new Set();  // each: { res, ownerId }
+function sseSend(res, event, data) { res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); }
+function broadcast(event, payload, ownerId) {
+  for (const c of clients) {
+    if (c.ownerId !== ownerId) continue;   // only push to that coach's live apps
+    try { sseSend(c.res, event, payload); } catch { /* dead socket, will be cleaned on close */ }
+  }
+}
+function startSse(req, res, ownerId) {
+  res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+  res.flushHeaders?.();
+  res.write(': connected\n\n');
+  const client = { res, ownerId };
+  clients.add(client);
+  const ping = setInterval(() => { try { res.write(': ping\n\n'); } catch { /* */ } }, 25000);
+  req.on('close', () => { clearInterval(ping); clients.delete(client); });
+}
+const deviceInsert = db.prepare('INSERT INTO impacts (player_id, linear_g, angular_accel, severity, flagged) VALUES (?, ?, ?, ?, ?)');
+
+// ---- device ingest: the helmet firmware POSTs here over cellular ----
+// Auth = a per-device shared secret (X-Device-Key), NOT a user login.
+app.post('/api/ingest', (req, res) => {
+  const key = req.headers['x-device-key'];
+  const deviceId = req.headers['x-device-id'] || (req.body || {}).device_id;
+  if (!key || !deviceId) return res.status(401).json({ error: 'device id + key required' });
+  const dev = db.prepare('SELECT * FROM devices WHERE device_id = ?').get(String(deviceId));
+  if (!dev || dev.device_key !== String(key)) return res.status(401).json({ error: 'unknown device or bad key' });
+
+  const b = req.body || {};
+  const linear_g = Number(b.g ?? b.linear_g);           // accept firmware names (g/angAccel) or api names
+  const angular_accel = Number(b.angAccel ?? b.angular_accel);
+  if (!isFinite(linear_g) || !isFinite(angular_accel)) return res.status(400).json({ error: 'g / angAccel required' });
+  const lg = Math.max(0, Math.min(200, linear_g));
+  const aa = Math.max(0, Math.min(15000, angular_accel));
+  const { severity, flagged } = classify(lg, aa);
+  const playerId = dev.player_id || DEMO_PLAYER;
+  const info = deviceInsert.run(playerId, Math.round(lg * 10) / 10, Math.round(aa), severity, flagged);
+  db.prepare("UPDATE devices SET last_seen = datetime('now') WHERE id = ?").run(dev.id);
+
+  const owner = db.prepare('SELECT owner_id FROM players WHERE id = ?').get(playerId).owner_id;
+  const impact = db.prepare('SELECT * FROM impacts WHERE id = ?').get(info.lastInsertRowid);
+  const payload = { ...impact, pad: b.pad ?? null, fsr: b.fsr != null ? Number(b.fsr) : null };
+  broadcast('impact', payload, owner);
+  if (flagged) broadcast('concussion_alert', payload, owner);
+  res.status(201).json({ ok: true, severity, flagged });
+});
+
+// ---- register / list helmets (coach auth) ----
+app.post('/api/devices', auth, (req, res) => {
+  const { device_id, name, player_id } = req.body || {};
+  if (!device_id) return res.status(400).json({ error: 'device_id required' });
+  if (player_id && !ownPlayer(req.user.id, player_id)) return res.status(404).json({ error: 'player not found' });
+  const key = crypto.randomBytes(18).toString('base64url');
+  try {
+    const info = db.prepare('INSERT INTO devices (device_id, device_key, owner_id, player_id, name) VALUES (?, ?, ?, ?, ?)')
+      .run(String(device_id), key, req.user.id, player_id || null, name || null);
+    const device = db.prepare('SELECT id, device_id, player_id, name, last_seen FROM devices WHERE id = ?').get(info.lastInsertRowid);
+    res.status(201).json({ device, device_key: key });   // key shown once — paste into firmware
+  } catch { res.status(409).json({ error: 'device already registered' }); }
+});
+app.get('/api/devices', auth, (req, res) =>
+  res.json({ devices: db.prepare('SELECT id, device_id, player_id, name, last_seen, created_at FROM devices WHERE owner_id = ?').all(req.user.id) }));
+
+// ---- live streams (EventSource) ----
+// token comes via query string because EventSource can't set headers.
+app.get('/api/stream', (req, res) => {
+  let user; try { user = jwt.verify(String(req.query.token || ''), JWT_SECRET); } catch { return res.status(401).end(); }
+  startSse(req, res, user.id);
+});
+app.get('/api/public/stream', (req, res) => startSse(req, res, DEMO_OWNER));
 
 const platformTotals = () => ({
   players: db.prepare('SELECT COUNT(*) c FROM players').get().c,
@@ -89,8 +167,11 @@ app.post('/api/public/impacts', (req, res) => {
   linear_g = Math.max(0, Math.min(200, linear_g));            // clamp to sane sensor range
   angular_accel = Math.max(0, Math.min(15000, angular_accel));
   const { severity, flagged } = classify(linear_g, angular_accel);
-  db.prepare('INSERT INTO impacts (player_id, linear_g, angular_accel, severity, flagged) VALUES (?, ?, ?, ?, ?)')
+  const info = db.prepare('INSERT INTO impacts (player_id, linear_g, angular_accel, severity, flagged) VALUES (?, ?, ?, ?, ?)')
     .run(DEMO_PLAYER, Math.round(linear_g * 10) / 10, Math.round(angular_accel), severity, flagged);
+  const impact = db.prepare('SELECT * FROM impacts WHERE id = ?').get(info.lastInsertRowid);
+  broadcast('impact', impact, DEMO_OWNER);
+  if (flagged) broadcast('concussion_alert', impact, DEMO_OWNER);
   res.status(201).json({ severity, flagged, totals: platformTotals() });
 });
 
@@ -158,7 +239,10 @@ app.post('/api/impacts', auth, (req, res) => {
   const { severity, flagged } = classify(Number(linear_g), Number(angular_accel));
   const info = db.prepare('INSERT INTO impacts (player_id, linear_g, angular_accel, severity, flagged) VALUES (?, ?, ?, ?, ?)')
     .run(player_id, Number(linear_g), Number(angular_accel), severity, flagged);
-  res.status(201).json({ impact: db.prepare('SELECT * FROM impacts WHERE id = ?').get(info.lastInsertRowid) });
+  const impact = db.prepare('SELECT * FROM impacts WHERE id = ?').get(info.lastInsertRowid);
+  broadcast('impact', impact, req.user.id);
+  if (flagged) broadcast('concussion_alert', impact, req.user.id);
+  res.status(201).json({ impact });
 });
 
 app.get('/api/impacts', auth, (req, res) => {
