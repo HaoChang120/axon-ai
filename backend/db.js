@@ -77,5 +77,24 @@ db.exec(`
 
 // migration: link a player record to a login account (role 'player')
 try { db.exec('ALTER TABLE players ADD COLUMN user_id INTEGER'); } catch { /* column exists */ }
+// migration: per-player biomechanics profile (personalizes the concussion threshold)
+try { db.exec('ALTER TABLE players ADD COLUMN weight REAL'); } catch { /* exists */ }
+try { db.exec('ALTER TABLE players ADD COLUMN neck_strength REAL'); } catch { /* exists */ }
+try { db.exec('ALTER TABLE players ADD COLUMN hydration INTEGER DEFAULT 1'); } catch { /* exists */ }
+// migration: per-user settings (alert thresholds + notification prefs) as JSON
+try { db.exec('ALTER TABLE users ADD COLUMN settings TEXT'); } catch { /* exists */ }
+
+// trainer <-> player messages (one thread per player)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS messages (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id   INTEGER NOT NULL,
+    sender      TEXT NOT NULL,          -- 'player' | 'trainer'
+    body        TEXT NOT NULL,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_messages_player ON messages(player_id);
+`);
 
 module.exports = db;

@@ -17,14 +17,22 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ---- helpers ----
 const sign = (u) => jwt.sign({ id: u.id, email: u.email, role: u.role }, JWT_SECRET, { expiresIn: '7d' });
-const publicUser = (u) => ({ id: u.id, email: u.email, name: u.name, role: u.role, team: u.team, created_at: u.created_at });
 
-function classify(linearG, angularAccel) {
-  // Thresholds aligned with the site's biomechanics copy
-  if (linearG >= 70 || angularAccel >= 4500) return { severity: 'concussion-risk', flagged: 1 };
-  if (linearG >= 40 || angularAccel >= 2500) return { severity: 'elevated', flagged: 0 };
+const DEFAULT_SETTINGS = { g: 70, ang: 4500, push: true, vibrate: true, notifyCoach: true, quiet: false };
+function userSettings(u) {
+  try { return { ...DEFAULT_SETTINGS, ...(u && u.settings ? JSON.parse(u.settings) : {}) }; }
+  catch { return { ...DEFAULT_SETTINGS }; }
+}
+const publicUser = (u) => ({ id: u.id, email: u.email, name: u.name, role: u.role, team: u.team, created_at: u.created_at, settings: userSettings(u) });
+
+// classify against the owner's saved thresholds so a settings change actually affects flagging
+function classify(linearG, angularAccel, thr) {
+  const g = (thr && thr.g) || 70, a = (thr && thr.ang) || 4500;
+  if (linearG >= g || angularAccel >= a) return { severity: 'concussion-risk', flagged: 1 };
+  if (linearG >= g * 0.57 || angularAccel >= a * 0.56) return { severity: 'elevated', flagged: 0 };
   return { severity: 'routine', flagged: 0 };
 }
+function settingsForUser(id) { return userSettings(db.prepare('SELECT settings FROM users WHERE id = ?').get(id)); }
 
 function auth(req, res, next) {
   const h = req.headers.authorization || '';
@@ -102,12 +110,11 @@ app.post('/api/ingest', (req, res) => {
   if (!isFinite(linear_g) || !isFinite(angular_accel)) return res.status(400).json({ error: 'g / angAccel required' });
   const lg = Math.max(0, Math.min(200, linear_g));
   const aa = Math.max(0, Math.min(15000, angular_accel));
-  const { severity, flagged } = classify(lg, aa);
   const playerId = dev.player_id || DEMO_PLAYER;
+  const owner = db.prepare('SELECT owner_id FROM players WHERE id = ?').get(playerId).owner_id;
+  const { severity, flagged } = classify(lg, aa, settingsForUser(owner));   // owner's live thresholds
   const info = deviceInsert.run(playerId, Math.round(lg * 10) / 10, Math.round(aa), severity, flagged);
   db.prepare("UPDATE devices SET last_seen = datetime('now') WHERE id = ?").run(dev.id);
-
-  const owner = db.prepare('SELECT owner_id FROM players WHERE id = ?').get(playerId).owner_id;
   const impact = db.prepare('SELECT * FROM impacts WHERE id = ?').get(info.lastInsertRowid);
   const payload = { ...impact, pad: b.pad ?? null, fsr: b.fsr != null ? Number(b.fsr) : null };
   broadcast('impact', payload, owner);
@@ -205,12 +212,26 @@ app.get('/api/me', auth, (req, res) => {
   res.json({ user: publicUser(user) });
 });
 
+// update account name / team / settings (alert thresholds + notification prefs)
+app.patch('/api/me', auth, (req, res) => {
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const { name, team, settings } = req.body || {};
+  const merged = settings ? JSON.stringify({ ...userSettings(user), ...settings }) : user.settings;
+  db.prepare('UPDATE users SET name = COALESCE(?, name), team = COALESCE(?, team), settings = ? WHERE id = ?')
+    .run(name ?? null, team ?? null, merged, user.id);
+  res.json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(user.id)) });
+});
+
 // ---- players ----
 app.get('/api/players', auth, (req, res) => {
   const rows = db.prepare(`
     SELECT p.*,
       (SELECT COUNT(*) FROM impacts i WHERE i.player_id = p.id) AS impact_count,
-      (SELECT COUNT(*) FROM impacts i WHERE i.player_id = p.id AND i.flagged = 1) AS flagged_count
+      (SELECT COUNT(*) FROM impacts i WHERE i.player_id = p.id AND i.flagged = 1) AS flagged_count,
+      (SELECT MAX(i.linear_g) FROM impacts i WHERE i.player_id = p.id) AS peak_g,
+      (SELECT i.linear_g FROM impacts i WHERE i.player_id = p.id ORDER BY i.created_at DESC LIMIT 1) AS last_g,
+      (SELECT i.angular_accel FROM impacts i WHERE i.player_id = p.id ORDER BY i.created_at DESC LIMIT 1) AS last_ang
     FROM players p WHERE p.owner_id = ? ORDER BY p.created_at DESC`).all(req.user.id);
   res.json({ players: rows });
 });
@@ -236,7 +257,7 @@ app.post('/api/impacts', auth, (req, res) => {
     return res.status(400).json({ error: 'player_id, linear_g, angular_accel required' });
   if (!ownPlayer(req.user.id, player_id)) return res.status(404).json({ error: 'Player not found' });
 
-  const { severity, flagged } = classify(Number(linear_g), Number(angular_accel));
+  const { severity, flagged } = classify(Number(linear_g), Number(angular_accel), settingsForUser(req.user.id));
   const info = db.prepare('INSERT INTO impacts (player_id, linear_g, angular_accel, severity, flagged) VALUES (?, ?, ?, ?, ?)')
     .run(player_id, Number(linear_g), Number(angular_accel), severity, flagged);
   const impact = db.prepare('SELECT * FROM impacts WHERE id = ?').get(info.lastInsertRowid);
@@ -304,7 +325,56 @@ app.get('/api/player/me', auth, (req, res) => {
   let clearance = 'cleared';
   if (checkin && checkin.status === 'symptoms') clearance = 'monitor';
   else if (lastFlag && (!checkin || lastFlag.created_at > checkin.created_at)) clearance = 'flagged';
-  res.json({ player: { id: p.id, name: p.name, jersey: p.jersey, position: p.position }, stats, checkin, clearance });
+  res.json({
+    player: { id: p.id, name: p.name, jersey: p.jersey, position: p.position, weight: p.weight, neck_strength: p.neck_strength, hydration: p.hydration },
+    stats, checkin, clearance
+  });
+});
+
+// update the player's own profile (personalizes their concussion threshold)
+app.patch('/api/player/me', auth, (req, res) => {
+  const p = linkedPlayer(req.user.id);
+  if (!p) return res.status(404).json({ error: 'No player profile' });
+  const { name, jersey, position, weight, neck_strength, hydration } = req.body || {};
+  db.prepare(`UPDATE players SET name = COALESCE(?, name), jersey = COALESCE(?, jersey), position = COALESCE(?, position),
+      weight = COALESCE(?, weight), neck_strength = COALESCE(?, neck_strength), hydration = COALESCE(?, hydration) WHERE id = ?`)
+    .run(name ?? null, jersey ?? null, position ?? null, weight ?? null, neck_strength ?? null,
+         hydration == null ? null : (hydration ? 1 : 0), p.id);
+  if (name) db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name, req.user.id);
+  const up = db.prepare('SELECT * FROM players WHERE id = ?').get(p.id);
+  res.json({ player: { id: up.id, name: up.name, jersey: up.jersey, position: up.position, weight: up.weight, neck_strength: up.neck_strength, hydration: up.hydration } });
+});
+
+// ---- trainer <-> player messages ----
+app.get('/api/messages', auth, (req, res) => {
+  let pid;
+  if (req.query.player_id) {
+    if (!ownPlayer(req.user.id, req.query.player_id)) return res.status(404).json({ error: 'Player not found' });
+    pid = Number(req.query.player_id);
+  } else {
+    const p = linkedPlayer(req.user.id);
+    if (!p) return res.status(404).json({ error: 'No player profile' });
+    pid = p.id;
+  }
+  res.json({ messages: db.prepare('SELECT id, sender, body, created_at FROM messages WHERE player_id = ? ORDER BY created_at ASC LIMIT 200').all(pid) });
+});
+app.post('/api/messages', auth, (req, res) => {
+  const body = String((req.body || {}).body || '').trim();
+  if (!body) return res.status(400).json({ error: 'body required' });
+  let pid, sender;
+  if (req.query.player_id) {                                  // a coach messaging one of their players
+    if (!ownPlayer(req.user.id, req.query.player_id)) return res.status(404).json({ error: 'Player not found' });
+    pid = Number(req.query.player_id); sender = 'trainer';
+  } else {                                                     // a player messaging their trainer
+    const p = linkedPlayer(req.user.id);
+    if (!p) return res.status(404).json({ error: 'No player profile' });
+    pid = p.id; sender = 'player';
+  }
+  const info = db.prepare('INSERT INTO messages (player_id, sender, body) VALUES (?, ?, ?)').run(pid, sender, body);
+  const msg = db.prepare('SELECT id, sender, body, created_at FROM messages WHERE id = ?').get(info.lastInsertRowid);
+  const owner = db.prepare('SELECT owner_id FROM players WHERE id = ?').get(pid).owner_id;
+  broadcast('message', { ...msg, player_id: pid }, owner);
+  res.status(201).json({ message: msg });
 });
 
 app.get('/api/player/impacts', auth, (req, res) => {

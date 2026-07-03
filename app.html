@@ -362,13 +362,17 @@ input{font-family:var(--disp)}
           <button class="on" data-role="player" onclick="setRole('player',this)">Player</button>
           <button data-role="coach" onclick="setRole('coach',this)">Coach</button>
         </div>
+        <div class="field" style="animation-delay:.26s">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M6 14a4 4 0 010-8 5 5 0 019.5 1.5A3.5 3.5 0 0114 14H6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <input type="url" id="loginApi" placeholder="Axon API URL" value="" autocomplete="off" autocapitalize="off" spellcheck="false">
+        </div>
         <div class="field" style="animation-delay:.28s">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="12" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M3 6l7 5 7-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          <input type="email" id="email" placeholder="Email" value="hao@axon.ai" autocomplete="off">
+          <input type="email" id="email" placeholder="Email" value="player@axon.ai" autocomplete="off" autocapitalize="off">
         </div>
         <div class="field" style="animation-delay:.32s">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="4" y="9" width="12" height="8" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M7 9V6.5a3 3 0 016 0V9" stroke="currentColor" stroke-width="1.6"/></svg>
-          <input type="password" id="pw" placeholder="Password" value="••••••••">
+          <input type="password" id="pw" placeholder="Password" value="axon1234">
           <svg class="eye" onclick="togglePw()" width="19" height="19" viewBox="0 0 20 20" fill="none"><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="2.2" stroke="currentColor" stroke-width="1.6"/></svg>
         </div>
         <button class="login-cta" style="animation-delay:.36s" id="loginBtn" onclick="doLogin()"><span>Sign In</span><div class="spin"></div></button>
@@ -422,6 +426,15 @@ input{font-family:var(--disp)}
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4l11 6-11 6V4z"/></svg>
           <span id="gameLabel">Start Game</span>
         </button>
+
+        <div class="card" id="checkinCard" style="margin-top:14px">
+          <div class="card-title" style="margin-bottom:12px"><span>Symptom check-in</span><span id="checkinState">not logged today</span></div>
+          <div class="prose" style="font-size:13.5px;margin-bottom:12px">How are you feeling right now? Your trainer sees this alongside your impacts.</div>
+          <div class="row" style="margin-top:0">
+            <button class="btn ghost sm" onclick="checkin('ok')">I feel good</button>
+            <button class="btn solid sm" onclick="checkin('symptoms')">I have symptoms</button>
+          </div>
+        </div>
 
         <div class="card sparkcard" id="sparkcard">
           <div class="card-title"><span>Live linear g</span><span>threshold 70 g</span></div>
@@ -477,7 +490,7 @@ input{font-family:var(--disp)}
       <div class="scroll">
         <div class="team-banner">
           <div class="tb-badge">S</div>
-          <div><div style="font-weight:600;font-size:17px">St. Margaret's Varsity</div><div class="tb-id">TEAM · LrIK9d4WAvx…</div></div>
+          <div><div id="teamName" style="font-weight:600;font-size:17px">My Team</div><div class="tb-id">TEAM</div></div>
           <div class="tb-count"><b id="onlineCount">3</b><span>Live</span></div>
         </div>
         <button class="cta" id="allBtn" onclick="startAll()" style="margin-top:16px">
@@ -540,13 +553,7 @@ input{font-family:var(--disp)}
     <!-- ========= NOTIFICATIONS ========= -->
     <section class="view" id="notifs">
       <div class="sub-head"><div class="back" onclick="goBack()"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="eyebrow">Inbox</div><h1>Notifications</h1></div></div>
-      <div class="scroll">
-        <div class="notif alert"><div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 3l8 14H2L10 3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 8v4M10 15h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><div><div class="nt">Concussion alert — 18.2 g impact</div><div class="ns">session_004 · rear pad · 331°/s</div></div><div class="nx">2d</div></div>
-        <div class="notif info"><div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 2v6l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/></svg></div><div><div class="nt">Coach requested a SCAT check</div><div class="ns">Mike Torres · reply in Chat</div></div><div class="nx">2d</div></div>
-        <div class="notif ok"><div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="nt">Cleared to return to play</div><div class="ns">Baseline SCAT passed · 100%</div></div><div class="nx">3d</div></div>
-        <div class="notif info"><div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M6 10h8M10 6v8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><div><div class="nt">Firmware 6.4.0 installed on your helmet</div><div class="ns">Axon_Main_Module · OTA</div></div><div class="nx">1w</div></div>
-        <div class="notif ok"><div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="nt">All metrics nominal this week</div><div class="ns">Peak 15.3 g · well under threshold</div></div><div class="nx">1w</div></div>
-      </div>
+      <div class="scroll" id="notifList"></div>
     </section>
 
     <!-- ========= INSIGHTS / TRENDS ========= -->
@@ -601,18 +608,19 @@ input{font-family:var(--disp)}
       <div class="sub-head"><div class="back" onclick="goBack()"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="eyebrow">Settings</div><h1>Alerts & Thresholds</h1></div></div>
       <div class="scroll">
         <div class="setting">
-          <div class="set-row"><div class="sr-txt"><div class="sr-t">Push notifications</div><div class="sr-s">Instant alert on flagged impacts</div></div><div class="tgl on" onclick="this.classList.toggle('on')"></div></div>
-          <div class="set-row"><div class="sr-txt"><div class="sr-t">Vibrate on alert</div><div class="sr-s">Haptic buzz when a hit is flagged</div></div><div class="tgl on" onclick="this.classList.toggle('on')"></div></div>
-          <div class="set-row"><div class="sr-txt"><div class="sr-t">Notify my coach</div><div class="sr-s">Send alerts to the team console</div></div><div class="tgl on" onclick="this.classList.toggle('on')"></div></div>
-          <div class="set-row"><div class="sr-txt"><div class="sr-t">Quiet hours</div><div class="sr-s">Mute non-critical between 10p–7a</div></div><div class="tgl" onclick="this.classList.toggle('on')"></div></div>
+          <div class="set-row"><div class="sr-txt"><div class="sr-t">Push notifications</div><div class="sr-s">Instant alert on flagged impacts</div></div><div class="tgl on" id="tgPush" onclick="this.classList.toggle('on')"></div></div>
+          <div class="set-row"><div class="sr-txt"><div class="sr-t">Vibrate on alert</div><div class="sr-s">Haptic buzz when a hit is flagged</div></div><div class="tgl on" id="tgVibrate" onclick="this.classList.toggle('on')"></div></div>
+          <div class="set-row"><div class="sr-txt"><div class="sr-t">Notify my coach</div><div class="sr-s">Send alerts to the team console</div></div><div class="tgl on" id="tgCoach" onclick="this.classList.toggle('on')"></div></div>
+          <div class="set-row"><div class="sr-txt"><div class="sr-t">Quiet hours</div><div class="sr-s">Mute non-critical between 10p and 7a</div></div><div class="tgl" id="tgQuiet" onclick="this.classList.toggle('on')"></div></div>
         </div>
         <div class="card" style="margin-top:16px">
           <div class="card-title"><span>Linear g threshold</span><span class="mono" id="tG">70 g</span></div>
-          <input class="slider" type="range" min="40" max="120" value="70" oninput="document.getElementById('tG').textContent=this.value+' g'">
+          <input class="slider" id="slG" type="range" min="40" max="120" value="70" oninput="document.getElementById('tG').textContent=this.value+' g'">
           <div class="card-title" style="margin-top:20px"><span>Angular threshold</span><span class="mono" id="tA">4500 rad/s²</span></div>
-          <input class="slider" type="range" min="2000" max="8000" step="100" value="4500" oninput="document.getElementById('tA').textContent=this.value+' rad/s²'">
-          <div class="prose" style="margin-top:16px;font-size:13px">These mirror the firmware's alert gates. Lowering them makes Axon more cautious; the Rowson–Duma model still scores every hit regardless.</div>
+          <input class="slider" id="slA" type="range" min="2000" max="8000" step="100" value="4500" oninput="document.getElementById('tA').textContent=this.value+' rad/s²'">
+          <div class="prose" style="margin-top:16px;font-size:13px">These are your live alert gates. Saving actually changes how your backend flags impacts, not just this screen.</div>
         </div>
+        <button class="savebtn" onclick="saveSettings()">Save thresholds</button>
       </div>
     </section>
 
@@ -620,18 +628,20 @@ input{font-family:var(--disp)}
     <section class="view" id="profileEdit">
       <div class="sub-head"><div class="back" onclick="goBack()"><svg width="11" height="18" viewBox="0 0 11 18" fill="none"><path d="M9 1L2 9l7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="eyebrow">Profile</div><h1>User Information</h1></div></div>
       <div class="scroll">
-        <div class="prose" style="margin-bottom:6px">These personalize your concussion threshold — neck strength and head mass measurably shift your risk curve.</div>
-        <div class="formrow"><label>Full name</label><input class="forminput" value="Hao Chang"></div>
-        <div class="formrow"><label>Position · number</label><input class="forminput" value="#52 · Defensive End"></div>
-        <div class="formrow"><label>Team</label><input class="forminput" value="St. Margaret's Varsity"></div>
+        <div class="prose" style="margin-bottom:6px">These personalize your concussion threshold. Neck strength and head mass measurably shift your risk curve.</div>
+        <div class="formrow"><label>Full name</label><input class="forminput" id="uiName"></div>
         <div style="display:flex;gap:12px">
-          <div class="formrow" style="flex:1"><label>Weight (lb)</label><input class="forminput" value="185" inputmode="numeric"></div>
-          <div class="formrow" style="flex:1"><label>Neck strength (lb)</label><input class="forminput" value="42" inputmode="numeric"></div>
+          <div class="formrow" style="flex:0 0 34%"><label>Jersey</label><input class="forminput" id="uiJersey" inputmode="numeric"></div>
+          <div class="formrow" style="flex:1"><label>Position</label><input class="forminput" id="uiPosition"></div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <div class="formrow" style="flex:1"><label>Weight (lb)</label><input class="forminput" id="uiWeight" inputmode="numeric"></div>
+          <div class="formrow" style="flex:1"><label>Neck strength (lb)</label><input class="forminput" id="uiNeck" inputmode="numeric"></div>
         </div>
         <div class="setting" style="margin-top:16px">
-          <div class="set-row"><div class="sr-txt"><div class="sr-t">Hydration modifier</div><div class="sr-s">Adjust threshold for dehydration risk</div></div><div class="tgl on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="set-row"><div class="sr-txt"><div class="sr-t">Hydration modifier</div><div class="sr-s">Adjust threshold for dehydration risk</div></div><div class="tgl on" id="uiHydration" onclick="this.classList.toggle('on')"></div></div>
         </div>
-        <button class="savebtn" onclick="toast('Profile saved ✓')">Save changes</button>
+        <button class="savebtn" onclick="saveUserInfo()">Save changes</button>
       </div>
     </section>
 
@@ -708,8 +718,22 @@ const state={
   device:localStorage.getItem("axon_device")||DEFAULT_DEVICE,
   api:localStorage.getItem("axon_api")||"",            // your backend base URL
   apiToken:localStorage.getItem("axon_api_token")||"",  // JWT from your API
+  user:null, impacts:[], roster:[], player:null,        // live backend data
   es:null, gameTimer:null, gameOn:false, retry:0, series:[], peakG:0
 };
+
+/* ===== API data layer (talks to YOUR backend with the JWT) ===== */
+function apiBase(){ return (state.api||'').replace(/\/$/,''); }
+async function apiFetch(path, opts={}){
+  const r=await fetch(apiBase()+path, {
+    ...opts,
+    headers:{ 'Content-Type':'application/json', ...(state.apiToken?{Authorization:'Bearer '+state.apiToken}:{}) , ...(opts.headers||{}) }
+  });
+  let j=null; try{ j=await r.json(); }catch(_){}
+  if(!r.ok) throw new Error((j&&j.error)||('HTTP '+r.status));
+  return j;
+}
+const initials=n=>(n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
 
 /* seed data grounded in the SIGML paper (BNO085 Experiment 2: PLA 6–18 g, PAV 105–331°/s) */
 const sessions=[
@@ -742,7 +766,9 @@ tickClock();setInterval(tickClock,10000);
 let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2600);}
 
 /* ===== role + tabs ===== */
-function setRole(r,el){state.role=r;document.querySelectorAll(".role-switch button").forEach(b=>b.classList.remove("on"));el.classList.add("on");}
+function setRole(r,el){state.role=r;document.querySelectorAll(".role-switch button").forEach(b=>b.classList.remove("on"));el.classList.add("on");
+  // convenience: prefill the demo account for that role
+  if(el.closest('.role-switch') && $("#email")) $("#email").value = r==='coach' ? 'coach@axon.ai' : 'player@axon.ai';}
 const CHAT_ICON='M3 5a2 2 0 012-2h10a2 2 0 012 2v6a2 2 0 01-2 2H8l-4 3v-3a2 2 0 01-1-2V5z';
 const TABS={
   player:[['home','Home','M3 9l7-6 7 6v8a1 1 0 01-1 1h-4v-5H8v5H4a1 1 0 01-1-1V9z'],
@@ -773,18 +799,64 @@ function go(id,record=true){
   if(id==='history')renderHistory();
   if(id==='team')renderTeam();
   if(id==='chat')renderChat();
-  if(id==='insights')buildChart2();
-  if(id==='me')$("#roleTag").textContent=state.role==='coach'?'Coach · St. Margaret\'s Varsity':'Player · #52 DE';
+  if(id==='insights'){buildChart2();renderInsights();}
+  if(id==='notifs')renderNotifs();
+  if(id==='alerts')loadSettings();
+  if(id==='profileEdit')loadUserInfo();
+  if(id==='me'&&state.user)applyUser(state.user);
 }
 function goBack(){const p=navStack.pop()||(state.role==='coach'?'team':'home');go(p,false);}
 
 /* ===== login ===== */
 function togglePw(){const i=$("#pw");i.type=i.type==='password'?'text':'password';}
-function doLogin(){const b=$("#loginBtn");b.classList.add('loading');
-  setTimeout(()=>{b.classList.remove('loading');buildChart();autoReconnect();go(state.role==='coach'?'team':'home');},850);}
+function applyUser(u){
+  state.user=u;
+  const first=(u.name||'Athlete').split(' ')[0];
+  $("#firstName").textContent=first;
+  document.querySelectorAll('.avatar,.pf-av').forEach(el=>el.textContent=initials(u.name));
+  $(".pf-name").textContent=u.name||'';
+  $(".pf-mail").textContent=u.email||'';
+  $("#roleTag").textContent = u.role==='coach' ? ('Coach · '+(u.team||'Team')) : 'Player';
+}
+async function doLogin(){
+  const base=$("#loginApi").value.trim().replace(/\/$/,''), email=$("#email").value.trim(), pw=$("#pw").value;
+  if(!base){toast('Enter your Axon API URL');return;}
+  if(!email||!pw){toast('Enter email and password');return;}
+  const b=$("#loginBtn");b.classList.add('loading');
+  try{
+    const r=await fetch(base+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
+    const j=await r.json();
+    if(!r.ok||!j.token){b.classList.remove('loading');toast(j.error||'Login failed');return;}
+    state.api=base;state.apiToken=j.token;state.conn='api';state.role=j.user.role==='coach'?'coach':'player';
+    localStorage.setItem('axon_api',base);localStorage.setItem('axon_api_token',j.token);localStorage.setItem('axon_conn','api');
+    applyUser(j.user);
+    b.classList.remove('loading');
+    connectAPI();                                  // live stream from your backend
+    await refreshData();                            // pull real history/roster/profile FIRST
+    go(state.role==='coach'?'team':'home');         // then render with real data
+  }catch(e){b.classList.remove('loading');toast('Could not reach '+base);}
+}
 function signOut(){stop();state.gameOn=false;resetGameBtn();$("#sparkcard").classList.remove('show');navStack=[];setConn('off','Helmet not paired');
+  state.apiToken='';state.user=null;state.impacts=[];state.roster=[];state.player=null;
+  localStorage.removeItem('axon_api_token');
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active','exit-left'));
   $("#login").classList.add('active');cur='login';$("#tabbar").style.display='none';$("#loginBtn").classList.remove('loading');toast('Signed out');}
+
+/* pull all backend data for the signed-in account */
+async function refreshData(){
+  try{
+    if(state.role==='coach'){
+      const {players}=await apiFetch('/api/players'); state.roster=players||[];
+      const {impacts}=await apiFetch('/api/impacts?limit=60'); state.impacts=impacts||[];
+    }else{
+      const me=await apiFetch('/api/player/me'); state.player=me.player; state.playerStats=me.stats; state.clearance=me.clearance;
+      const {impacts}=await apiFetch('/api/player/impacts'); state.impacts=impacts||[];
+    }
+    buildChart(); loadHome();
+    if(cur==='history')renderHistory();
+    if(cur==='team')renderTeam();
+  }catch(e){ toast('Data load failed: '+e.message); }
+}
 
 /* ===== risk ring + vitals render ===== */
 function riskColor(p){return p>=.5?'var(--alert)':p>=.2?'var(--signal)':p>=.05?'var(--amber)':'var(--good)';}
@@ -817,12 +889,39 @@ function render(d){
   pushSpark(g);
 }
 
+/* ===== normalize backend data -> the shapes the UI renders ===== */
+function tparse(s){ const d=new Date(String(s||'').replace(' ','T')+'Z'); return isNaN(d)?null:d; }
+function impactRow(im){
+  const g=+im.linear_g||0, ang=+im.angular_accel||0;
+  const lvl=im.severity==='concussion-risk'?'high':im.severity==='elevated'?'med':'low';
+  const d=tparse(im.created_at);
+  return { id:im.id, date:d?d.toLocaleDateString([], {month:'short',day:'numeric'}):(im.created_at||''),
+    time:d?d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'', sid:'impact_'+String(im.id).padStart(3,'0'),
+    pla:g.toFixed(1), pav:Math.round(ang), force:im.fsr?im.fsr.toLocaleString():'—',
+    pct:Math.round(concProb(g,ang)*100), lvl, g, ang, pad:im.pad };
+}
+function rosterRow(p){
+  const g=+p.last_g||0, ang=+p.last_ang||0, risk=Math.round(concProb(g,ang)*100);
+  return { name:p.name, pos:(p.jersey?('#'+p.jersey+' '):'')+(p.position||''), risk,
+    lvl:risk>=50?'high':risk>=20?'med':'low', on:(p.impact_count>0), _id:p.id, peak:Math.round(p.peak_g||0),
+    impacts:p.impact_count, flagged:p.flagged_count };
+}
+const histData=()=> (state.impacts&&state.impacts.length)? state.impacts.map(impactRow) : sessions;
+const rosterData=()=> (state.roster&&state.roster.length)? state.roster.map(rosterRow) : players;
+
+/* set the Home ring + vitals from the latest real impact */
+function loadHome(){
+  const rows=state.impacts;
+  if(rows&&rows.length){ const l=rows[0];
+    render({g:+l.linear_g,angAccel:+l.angular_accel,fsr:l.fsr||0,pad:l.pad||'-',status:l.flagged?'alert':'nominal'}); }
+  if(state.conn==='api'&&state.apiToken) setConn('live', state.player?('Live · '+(state.player.name||'you')):'Live · your Axon API');
+}
+
 /* ===== concussion alert ===== */
 function fireAlert(d){const g=+d.g||0,ang=+d.angAccel||0,p=concProb(g,ang);
   $("#alertStat").textContent=`${g.toFixed(1)} g · ${Math.round(ang).toLocaleString()} rad/s² · ${Math.round(p*100)}% CP`;
   $("#alertlay").classList.add('show');
   if(navigator.vibrate)navigator.vibrate([200,90,200,90,400]);
-  pushChatAlert(g,ang);
 }
 $("#btnDismiss").onclick=()=>{$("#alertlay").classList.remove('show');if(navigator.vibrate)navigator.vibrate(0);};
 
@@ -875,8 +974,11 @@ function connectAPI(){
   const es=new EventSource(`${base}/api/stream?token=${encodeURIComponent(state.apiToken)}`);
   state.es=es;
   es.addEventListener('open',()=>{state.retry=0;setConn('live','Live · your Axon API');toast('Connected to your Axon API');});
-  es.addEventListener('impact',e=>{try{render(normApi(JSON.parse(e.data)));}catch(_){}});
+  es.addEventListener('impact',e=>{try{const raw=JSON.parse(e.data);render(normApi(raw));
+    state.impacts.unshift(raw);if(state.impacts.length>80)state.impacts.pop();
+    if(cur==='history')renderHistory();if(cur==='home')buildChart();}catch(_){}});
   es.addEventListener('concussion_alert',e=>{try{fireAlert(normApi(JSON.parse(e.data)));}catch(_){}});
+  es.addEventListener('message',e=>{try{onIncomingMessage(JSON.parse(e.data));}catch(_){}});
   es.addEventListener('error',()=>{state.retry++;
     if(state.retry>=4){stop();setConn('off','Stream stopped — check API');toast('Could not reach your Axon API');}
     else setConn('','Reconnecting…');});
@@ -958,106 +1060,208 @@ let aiIdx=0;function askAI(){const v=$("#aiInput").value.trim();$("#aiInput").va
 
 /* ===== history ===== */
 const lvlColor=l=>l==='high'?'var(--alert)':l==='med'?'var(--amber)':'var(--good)';
-function renderHistory(){$("#histList").innerHTML=
-  '<div class="section-h" style="margin-top:6px"><h2 class="mono" style="font-size:14px;color:var(--dim);font-weight:600">4 sessions · Axon_Main_Module</h2><a href="#" onclick="go(\'insights\');return false">Insights →</a></div>'+
-  sessions.map((s,i)=>`<div class="session" style="animation:rise .5s ${.05+i*.07}s both">
+function renderHistory(){const rows=histData();
+  $("#histList").innerHTML=
+  `<div class="section-h" style="margin-top:6px"><h2 class="mono" style="font-size:14px;color:var(--dim);font-weight:600">${rows.length} impacts · Axon_Main_Module</h2><a href="#" onclick="go('insights');return false">Insights →</a></div>`+
+  (rows.length?rows.map((s,i)=>`<div class="session" style="animation:rise .5s ${.05+i*.05}s both">
     <div class="session-head" onclick="openSession(${i})">
-      <div><div class="s-date">${s.date}</div><div class="s-sub">${s.sid} · 12:38 PM</div></div>
+      <div><div class="s-date">${s.date}</div><div class="s-sub">${s.sid} · ${s.time||''}</div></div>
       <div style="display:flex;align-items:center;gap:12px">
         <div class="risk-chip ${s.lvl}">${s.pct}% risk</div>
         <svg class="chev" style="transform:rotate(-90deg)" width="13" height="8" viewBox="0 0 13 8" fill="none"><path d="M1 1l5.5 5L12 1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      </div></div></div>`).join('');}
+      </div></div></div>`).join(''):'<div class="empty">No impacts logged yet. They appear here live as they happen.</div>');}
 
-/* ===== session detail ===== */
-function openSession(i){const s=sessions[i];$("#sessTitle").textContent=s.sid;
+/* ===== session (impact) detail ===== */
+function openSession(i){const s=histData()[i];if(!s)return;$("#sessTitle").textContent=s.sid;
+  const ang=s.pav!=null?s.pav:s.ang;
   $("#sessBody").innerHTML=`
     <div class="card hero" style="padding:22px 20px 20px">
       <div class="ring-center" style="position:static">
         <div class="big" style="color:${lvlColor(s.lvl)}">${s.pct}<small>%</small></div>
         <div class="lbl">Concussion Probability</div>
       </div>
-      <div class="status-pill ${s.lvl==='low'?'':'demo'}" style="margin-top:16px"><span class="dot"></span> ${s.date} · 12:38 PM</div>
+      <div class="status-pill ${s.lvl==='low'?'':'demo'}" style="margin-top:16px"><span class="dot"></span> ${s.date}${s.time?' · '+s.time:''}</div>
     </div>
     <div class="bigstat" style="margin-top:14px">
       <div class="bs"><div class="bs-v">${s.pla}<small> g</small></div><div class="bs-l">Peak linear accel</div></div>
-      <div class="bs"><div class="bs-v">${s.pav}<small> °/s</small></div><div class="bs-l">Peak angular vel</div></div>
-      <div class="bs"><div class="bs-v">${s.force}<small> N</small></div><div class="bs-l">Peak pad force</div></div>
-      <div class="bs"><div class="bs-v" style="color:${lvlColor(s.lvl)}">${s.lvl==='high'?'Rear':s.lvl==='med'?'Front':'Side'}</div><div class="bs-l">Primary impact</div></div>
+      <div class="bs"><div class="bs-v">${(+ang).toLocaleString()}<small> rad/s²</small></div><div class="bs-l">Peak angular accel</div></div>
+      <div class="bs"><div class="bs-v">${s.force}</div><div class="bs-l">Peak pad force</div></div>
+      <div class="bs"><div class="bs-v" style="color:${lvlColor(s.lvl)}">${(s.pad&&s.pad!=='-')?s.pad:'—'}</div><div class="bs-l">Impact pad</div></div>
     </div>
     <div class="card" style="margin-top:14px">
       <div class="card-title" style="margin-bottom:12px"><span>Axon read</span></div>
-      <div class="prose">${s.lvl==='high'?'This session logged your season-peak hit. A rear-pad impact drove rotation to '+s.pav+'°/s — the athletic trainer was alerted and a SCAT check was recommended.':s.lvl==='med'?'A moderate front-pad contact at '+s.pla+' g. Below the caution line but worth noting in a busy contact day.':'Routine contact throughout. Every metric sat comfortably under threshold.'}</div>
+      <div class="prose">${s.lvl==='high'?'A concussion-level hit: '+s.pla+' g / '+(+ang).toLocaleString()+' rad/s². The trainer is alerted and a SCAT check is recommended before return to play.':s.lvl==='med'?'A moderate impact at '+s.pla+' g. Below the alert line but worth noting.':'Routine contact. Every metric sat comfortably under threshold.'}</div>
     </div>
     <button class="sheet-ghost" style="margin-top:16px" onclick="go('chat')">Message the trainer about this</button>`;
   go('session');}
 
-/* ===== chart2 (insights) ===== */
-function buildChart2(){const c=$("#chart2");c.querySelectorAll('.bar-col').forEach(e=>e.remove());
-  const data=[...sessions].reverse();const max=24;
-  data.forEach((s,i)=>{const col=document.createElement('div');col.className='bar-col';
-    col.innerHTML=`<div class="bar ${s.lvl==='high'?'hi':''}"></div><div class="bar-x">${s.date.split(',')[0].replace('Aug ','8/')}</div>`;
-    c.appendChild(col);setTimeout(()=>{col.querySelector('.bar').style.height=(s.pla/max*100)+'%';},120+i*90);});}
+/* ===== charts (home + insights) share the same real data ===== */
+function buildBars(elId){const c=document.getElementById(elId);if(!c)return;c.querySelectorAll('.bar-col').forEach(e=>e.remove());
+  const rows=histData().slice(0,7).reverse();const max=Math.max(24,...rows.map(s=>+s.pla));
+  rows.forEach((s,i)=>{const col=document.createElement('div');col.className='bar-col';
+    col.innerHTML=`<div class="bar ${s.lvl==='high'?'hi':''}"></div><div class="bar-x">${(s.date||'').split(',')[0]}</div>`;
+    c.appendChild(col);setTimeout(()=>{col.querySelector('.bar').style.height=Math.min(100,(+s.pla/max*100))+'%';},120+i*80);});}
+function buildChart(){buildBars('chart');}
+function buildChart2(){buildBars('chart2');}
 
-/* ===== player detail (coach) ===== */
-function openPlayer(i){const p=players[i];$("#plTitle").textContent=p.name;
+/* ===== player detail (coach) — loads that player's real impacts ===== */
+async function openPlayer(i){const p=rosterData()[i];if(!p)return;$("#plTitle").textContent=p.name;
+  $("#plBody").innerHTML='<div class="empty">Loading…</div>';go('player');
+  let impacts=[]; if(p._id){ try{ impacts=(await apiFetch('/api/impacts?player_id='+p._id+'&limit=40')).impacts||[]; }catch(_){} }
+  const last=impacts[0]; const lg=last?+last.linear_g:0, la=last?+last.angular_accel:0;
+  const flagged=impacts.filter(x=>x.flagged).length;
   $("#plBody").innerHTML=`
     <div class="card hero" style="padding:22px 20px 20px">
       <div class="ring-center" style="position:static">
         <div class="big" style="color:${lvlColor(p.lvl)}">${p.risk}<small>%</small></div>
-        <div class="lbl">Live Concussion Risk</div>
+        <div class="lbl">Concussion Risk</div>
       </div>
-      <div class="status-pill ${p.on?'':'off'}" style="margin-top:16px"><span class="dot"></span> ${p.on?'Live · on the field':'Offline · helmet idle'} · ${p.pos}</div>
+      <div class="status-pill ${p.on?'':'off'}" style="margin-top:16px"><span class="dot"></span> ${p.on?'Monitored':'No data yet'} · ${p.pos||''}</div>
     </div>
     <div class="bigstat" style="margin-top:14px">
-      <div class="bs"><div class="bs-v">${(6+p.risk*0.4).toFixed(1)}<small> g</small></div><div class="bs-l">Last linear peak</div></div>
-      <div class="bs"><div class="bs-v">${Math.round(120+p.risk*7)}<small> °/s</small></div><div class="bs-l">Last rotation</div></div>
-      <div class="bs"><div class="bs-v">${p.on?'3':'0'}</div><div class="bs-l">Hits this quarter</div></div>
-      <div class="bs"><div class="bs-v" style="color:${lvlColor(p.lvl)}">${p.lvl.toUpperCase()}</div><div class="bs-l">Status</div></div>
+      <div class="bs"><div class="bs-v">${last?lg.toFixed(1):'—'}<small> g</small></div><div class="bs-l">Last linear peak</div></div>
+      <div class="bs"><div class="bs-v">${last?la.toLocaleString():'—'}<small> rad/s²</small></div><div class="bs-l">Last rotation</div></div>
+      <div class="bs"><div class="bs-v">${p.impacts||0}</div><div class="bs-l">Total impacts</div></div>
+      <div class="bs"><div class="bs-v" style="color:${flagged?'var(--alert)':'var(--good)'}">${flagged}</div><div class="bs-l">Flagged hits</div></div>
     </div>
-    <button class="cta" style="margin-top:16px" onclick="toast('Watching ${p.name} live')"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4l11 6-11 6V4z"/></svg><span>Watch live feed</span></button>
-    <button class="sheet-ghost" style="margin-top:10px" onclick="go('chat')">Message ${p.name.split(' ')[0]}</button>`;
-  go('player');}
+    <div class="card" style="margin-top:14px">
+      <div class="card-title" style="margin-bottom:10px"><span>Recent impacts</span><span>${impacts.length}</span></div>
+      ${impacts.slice(0,6).map(im=>{const r=impactRow(im);return `<div class="ev"><div class="ei" style="background:${r.lvl==='high'?'rgba(255,59,70,.16)':'var(--panel2)'};color:${lvlColor(r.lvl)}">${r.pct}</div><div class="em"><div class="et">${r.pla} g · ${(+r.pav).toLocaleString()} rad/s²</div><div class="es">${r.date} ${r.time}</div></div></div>`;}).join('')||'<div class="empty" style="padding:12px 0">No impacts yet.</div>'}
+    </div>
+    <button class="sheet-ghost" style="margin-top:14px" onclick="go('chat')">Message ${p.name.split(' ')[0]}</button>`;
+}
 
 /* ===== team ===== */
-function renderTeam(){$("#roster").innerHTML=players.map((p,i)=>`
+function renderTeam(){const roster=rosterData();
+  $("#roster").innerHTML=roster.length?roster.map((p,i)=>`
   <div class="player-row" style="animation:rise .5s ${.05+i*.07}s both" onclick="openPlayer(${i})">
-    <div class="pr-av">${p.name.split(' ').map(n=>n[0]).join('')}</div>
-    <div><div class="pr-name">${p.name}</div><div class="pr-meta">${p.on?'<span class="live-dot"></span> Online · ':'Offline · '}${p.pos}</div></div>
-    <div class="mini-gauge ${p.lvl}"><b>${p.risk}%</b><span>risk</span></div></div>`).join('');
-  $("#onlineCount").textContent=players.filter(p=>p.on).length;}
+    <div class="pr-av">${initials(p.name)}</div>
+    <div><div class="pr-name">${p.name}</div><div class="pr-meta">${p.on?'<span class="live-dot"></span> Monitored · ':'No data · '}${p.pos||''}</div></div>
+    <div class="mini-gauge ${p.lvl}"><b>${p.risk}%</b><span>risk</span></div></div>`).join(''):'<div class="empty">No players yet. Add one from the roster.</div>';
+  $("#onlineCount").textContent=roster.filter(p=>p.on).length;
+  const tn=document.getElementById('teamName'); if(tn&&state.user&&state.user.team)tn.textContent=state.user.team;
+  const badge=document.querySelector('.tb-badge'); if(badge&&state.user&&state.user.team)badge.textContent=state.user.team[0].toUpperCase();}
 function startAll(){const b=$("#allBtn");if(b.classList.contains('live'))return;b.classList.add('live');b.querySelector('svg').outerHTML='<div class="rec"></div>';
   b.querySelector('span').textContent='All Games Live';toast('Monitoring '+players.filter(p=>p.on).length+' players live');}
 
-/* ===== chat ===== */
-const messages=[
-  {sep:'Today'},
-  {from:'in',alert:true,text:'⚠ Helmet flagged an 18.2 g impact · 331°/s',time:'7:32 PM'},
-  {from:'in',text:'Hey Hao — big hit in the 3rd. How are you feeling?',time:'7:33 PM'},
-  {from:'out',text:'A little headache but I think I\'m good',time:'7:34 PM'},
-  {from:'in',text:'Let\'s play it safe. Any dizziness, nausea, or light sensitivity?',time:'7:34 PM'},
-];
-const trainerReplies=['Got it — pulling your session data now.','Concussion probability is at 22%. Sit the next series for me.','Come see me on the sideline for a quick SCAT check.','Noted — keep me posted and hydrate up.','Good. I\'ll keep watching your helmet feed in real time.'];
-let replyIdx=0,chatRendered=false;
-function msgHTML(m){if(m.sep)return `<div class="day-sep">${m.sep}</div>`;
-  return `<div class="msg-row ${m.from}"><div class="bubble ${m.alert?'alert':''}">${m.text}</div><div class="msg-time">${m.time}</div></div>`;}
-function now(){const n=new Date();const ap=n.getHours()>=12?'PM':'AM';return ((n.getHours()%12)||12)+':'+String(n.getMinutes()).padStart(2,'0')+' '+ap;}
-function renderChat(){const s=$("#chatScroll");if(chatRendered){s.scrollTop=s.scrollHeight;return;}
-  s.innerHTML=messages.map(msgHTML).join('');chatRendered=true;setTimeout(()=>s.scrollTop=s.scrollHeight,50);}
-function pushChatAlert(g,ang){messages.push({from:'in',alert:true,text:`⚠ Helmet flagged a ${(+g).toFixed(0)} g impact · ${Math.round(ang)} rad/s²`,time:now()});
-  if(chatRendered){const s=$("#chatScroll");s.insertAdjacentHTML('beforeend',msgHTML(messages[messages.length-1]));s.scrollTop=s.scrollHeight;}}
-function sendMsg(){const inp=$("#msgInput"),v=inp.value.trim();if(!v)return;inp.value='';
-  const s=$("#chatScroll"),msg={from:'out',text:v,time:now()};messages.push(msg);
-  s.insertAdjacentHTML('beforeend',msgHTML(msg));s.scrollTop=s.scrollHeight;
-  setTimeout(()=>{s.insertAdjacentHTML('beforeend','<div class="typing" id="typing"><span></span><span></span><span></span></div>');s.scrollTop=s.scrollHeight;
-    setTimeout(()=>{$("#typing")?.remove();const r={from:'in',text:trainerReplies[replyIdx%trainerReplies.length],time:now()};replyIdx++;
-      messages.push(r);s.insertAdjacentHTML('beforeend',msgHTML(r));s.scrollTop=s.scrollHeight;},1400);},500);}
+/* ===== chat (real messages persisted to your backend) ===== */
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function chatBubble(m){
+  const mine=(state.role==='player'&&m.sender==='player')||(state.role==='coach'&&m.sender==='trainer');
+  const d=tparse(m.created_at); const t=d?d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
+  return `<div class="msg-row ${mine?'out':'in'}"><div class="bubble">${escapeHtml(m.body)}</div><div class="msg-time">${t}</div></div>`;
+}
+async function renderChat(){
+  const s=$("#chatScroll");
+  $(".ch-name").textContent = state.role==='coach' ? (state.roster[0]?.name||'Player') : 'Athletic Trainer';
+  try{
+    if(state.role==='coach'){
+      state.chatPid=state.roster[0]?.id||null;
+      const {messages}=state.chatPid?await apiFetch('/api/messages?player_id='+state.chatPid):{messages:[]};
+      state.chat=messages||[];
+    }else{
+      const {messages}=await apiFetch('/api/messages'); state.chat=messages||[];
+    }
+  }catch(e){ state.chat=[]; }
+  s.innerHTML = state.chat.length? state.chat.map(chatBubble).join('')
+    : '<div class="empty">No messages yet. Say hello to your '+(state.role==='coach'?'player':'trainer')+'.</div>';
+  setTimeout(()=>s.scrollTop=s.scrollHeight,40);
+}
+function onIncomingMessage(m){
+  state.chat=state.chat||[];
+  // avoid echoing our own just-sent message twice
+  if(state.chat.some(x=>x.id===m.id))return;
+  state.chat.push(m);
+  if(cur==='chat'){const s=$("#chatScroll");if(state.chat.length===1)s.innerHTML='';s.insertAdjacentHTML('beforeend',chatBubble(m));s.scrollTop=s.scrollHeight;}
+}
+async function sendMsg(){
+  const inp=$("#msgInput"),v=inp.value.trim();if(!v)return;inp.value='';
+  const path=(state.role==='coach'&&state.chatPid)?'/api/messages?player_id='+state.chatPid:'/api/messages';
+  try{
+    const {message}=await apiFetch(path,{method:'POST',body:JSON.stringify({body:v})});
+    state.chat=state.chat||[]; state.chat.push(message);
+    const s=$("#chatScroll"); if(state.chat.length===1)s.innerHTML='';
+    s.insertAdjacentHTML('beforeend',chatBubble(message)); s.scrollTop=s.scrollHeight;
+  }catch(e){ toast('Send failed: '+e.message); }
+}
+
+/* ===== profile / settings / check-in / notifications / insights ===== */
+async function loadUserInfo(){
+  let p=state.player;
+  if(state.role==='player'&&!p){ try{ p=(await apiFetch('/api/player/me')).player; state.player=p; }catch(_){}}
+  const u=state.user||{};
+  $("#uiName").value=(p&&p.name)||u.name||'';
+  $("#uiJersey").value=(p&&p.jersey)||'';
+  $("#uiPosition").value=(p&&p.position)||'';
+  $("#uiWeight").value=(p&&p.weight)||'';
+  $("#uiNeck").value=(p&&p.neck_strength)||'';
+  $("#uiHydration").classList.toggle('on', !p || p.hydration!==0);
+}
+async function saveUserInfo(){
+  const name=$("#uiName").value.trim();
+  const payload={ name, jersey:parseInt($("#uiJersey").value)||null, position:$("#uiPosition").value.trim()||null,
+    weight:parseFloat($("#uiWeight").value)||null, neck_strength:parseFloat($("#uiNeck").value)||null,
+    hydration:$("#uiHydration").classList.contains('on')?1:0 };
+  try{
+    if(state.role==='player'){ const {player}=await apiFetch('/api/player/me',{method:'PATCH',body:JSON.stringify(payload)}); state.player=player; }
+    if(name){ const {user}=await apiFetch('/api/me',{method:'PATCH',body:JSON.stringify({name})}); applyUser(user); }
+    toast('Profile saved ✓'); goBack();
+  }catch(e){ toast('Save failed: '+e.message); }
+}
+function loadSettings(){
+  const s=(state.user&&state.user.settings)||{g:70,ang:4500,push:true,vibrate:true,notifyCoach:true,quiet:false};
+  $("#tgPush").classList.toggle('on',!!s.push); $("#tgVibrate").classList.toggle('on',!!s.vibrate);
+  $("#tgCoach").classList.toggle('on',!!s.notifyCoach); $("#tgQuiet").classList.toggle('on',!!s.quiet);
+  $("#slG").value=s.g; $("#tG").textContent=s.g+' g'; $("#slA").value=s.ang; $("#tA").textContent=s.ang+' rad/s²';
+}
+async function saveSettings(){
+  const s={ push:$("#tgPush").classList.contains('on'), vibrate:$("#tgVibrate").classList.contains('on'),
+    notifyCoach:$("#tgCoach").classList.contains('on'), quiet:$("#tgQuiet").classList.contains('on'),
+    g:parseInt($("#slG").value), ang:parseInt($("#slA").value) };
+  try{ const {user}=await apiFetch('/api/me',{method:'PATCH',body:JSON.stringify({settings:s})}); state.user=user; toast('Thresholds saved ✓'); goBack(); }
+  catch(e){ toast('Save failed: '+e.message); }
+}
+async function checkin(status){
+  try{ await apiFetch('/api/player/checkin',{method:'POST',body:JSON.stringify({status})});
+    $("#checkinState").textContent = status==='ok'?'feeling good ✓':'symptoms logged';
+    toast(status==='ok'?'Logged — feeling good ✓':'Logged — your trainer is notified');
+  }catch(e){ toast('Check-in failed: '+e.message); }
+}
+function renderNotifs(){
+  const el=$("#notifList");const flagged=(state.impacts||[]).filter(x=>x.flagged).slice(0,12);
+  el.innerHTML = flagged.length? flagged.map(im=>{const r=impactRow(im);
+    return `<div class="notif alert"><div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 3l8 14H2L10 3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 8v4M10 15h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><div><div class="nt">Concussion alert — ${r.pla} g impact</div><div class="ns">${r.sid} · ${(+r.pav).toLocaleString()} rad/s²</div></div><div class="nx">${r.date}</div></div>`;
+  }).join('') : '<div class="empty">No alerts. Every hit has been under threshold.</div>';
+}
+function renderInsights(){
+  const rows=histData();const n=rows.length||1;
+  const avgG=(rows.reduce((a,s)=>a+ +s.pla,0)/n).toFixed(1);
+  const avgA=Math.round(rows.reduce((a,s)=>a+ +(s.pav!=null?s.pav:s.ang),0)/n);
+  const flagged=rows.filter(s=>s.lvl==='high').length;
+  const el=$("#insights .bigstat"); if(el) el.innerHTML=`
+    <div class="bs"><div class="bs-v" style="color:var(--good)">${avgG}<small> g</small></div><div class="bs-l">Avg peak linear</div></div>
+    <div class="bs"><div class="bs-v">${avgA.toLocaleString()}<small> rad/s²</small></div><div class="bs-l">Avg peak rotation</div></div>
+    <div class="bs"><div class="bs-v">${rows.length}</div><div class="bs-l">Impacts logged</div></div>
+    <div class="bs"><div class="bs-v" style="color:${flagged?'var(--amber)':'var(--good)'}">${flagged}</div><div class="bs-l">Flagged impacts</div></div>`;
+}
 
 /* ===== boot ===== */
 $("#tabbar").style.display='none';
 $("#inDevice").value=state.device;
+$("#loginApi").value=state.api||'';
 if(state.conn==='api'&&state.apiToken)$("#devSub").textContent='Your Axon API · connected';
 else if(state.token)$("#devSub").textContent='Axon_Main_Module · paired';
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+/* restore a saved session so a refresh keeps you logged in */
+(async function restore(){
+  if(state.conn==='api'&&state.api&&state.apiToken){
+    try{
+      const {user}=await apiFetch('/api/me'); applyUser(user);
+      state.role=user.role==='coach'?'coach':'player';
+      connectAPI(); go(state.role==='coach'?'team':'home'); await refreshData();
+    }catch(_){ /* token expired -> stay on the login screen */ }
+  }
+})();
 </script>
 </body>
 </html>
