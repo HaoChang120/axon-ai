@@ -587,7 +587,7 @@ input{font-family:var(--disp)}
       <div class="scroll">
         <div class="card">
           <div class="pipe">
-            <div class="node"><div class="ln"></div><div class="nd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 2C6 6 4 8.5 4 12a6 6 0 0012 0c0-3.5-2-6-6-10z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div><div><div class="nt">Sensors in the shell</div><div class="np">A BNO085 9-DOF IMU tracks linear + angular acceleration at 1000 Hz. Four FSR pressure pads read impact force front, sides, and rear.</div></div></div>
+            <div class="node"><div class="ln"></div><div class="nd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 2C6 6 4 8.5 4 12a6 6 0 0012 0c0-3.5-2-6-6-10z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div><div><div class="nt">Sensors in the shell</div><div class="np">A BNO085 9-DOF IMU tracks linear + angular acceleration at 100 Hz. Four FSR pressure pads read impact force front, sides, and rear.</div></div></div>
             <div class="node"><div class="ln"></div><div class="nd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 8h4v4H8z" fill="currentColor"/></svg></div><div><div class="nt">Particle Boron</div><div class="np">The pads feed ADS1115 ADCs; everything lands on a Particle Boron over I²C. It scores each hit and publishes over LTE — no phone tether needed.</div></div></div>
             <div class="node"><div class="ln"></div><div class="nd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M6 14a4 4 0 010-8 5 5 0 019.5 1.5A3.5 3.5 0 0114 14H6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div><div><div class="nt">The cloud</div><div class="np">Impacts stream to the Particle Cloud in milliseconds. This app subscribes to the live event feed — anywhere with a signal.</div></div></div>
             <div class="node"><div class="nd"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="5" y="2" width="10" height="16" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 15h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><div><div class="nt">Your pocket</div><div class="np">Coaches and players get a risk score and an instant alert the moment a dangerous hit lands — before a second one can.</div></div></div>
@@ -597,7 +597,7 @@ input{font-family:var(--disp)}
           <div class="card-title" style="margin-bottom:12px"><span>The science</span></div>
           <div class="prose">Axon scores risk with the <b>Rowson–Duma combined probability</b> model, which weighs linear <i>and</i> rotational acceleration together rather than a single g cutoff. Concussive hits typically reach <b>~95–100 g</b> and <b>~4500–7000 rad/s²</b>. Your personal threshold shifts with neck strength, head mass, and hydration.</div>
           <div style="margin-top:14px">
-            <span class="pill-tag">1000 Hz</span><span class="pill-tag">&lt;50 ms detection</span><span class="pill-tag">Rowson–Duma</span><span class="pill-tag">SIGML 2026</span>
+            <span class="pill-tag">100 Hz</span><span class="pill-tag">Alert in seconds</span><span class="pill-tag">Rowson–Duma</span><span class="pill-tag">SIGML 2026</span>
           </div>
         </div>
       </div>

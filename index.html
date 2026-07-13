@@ -318,14 +318,14 @@
   <div class="reveal">
     <div class="eyebrow">Smart helmet system</div>
     <h1>Every hit,<br><span class="it">measured.</span></h1>
-    <p class="lead">Axon is a smart football helmet that measures every hit your child takes — and the moment one crosses into concussion territory, you and the coach know instantly, before a second hit can land.</p>
+    <p class="lead">Axon is a smart football helmet that measures every hit your child takes — and the moment one crosses into concussion territory, you and the coach know, before a second hit can land.</p>
     <div class="cta">
       <a class="btn solid" href="#join">Join the waitlist</a>
       <a class="btn ghost" href="#demo">Watch it detect a hit →</a>
     </div>
     <div class="heromicro">
-      <span><b>1000 Hz</b> sampling</span>
-      <span><b>&lt;50 ms</b> to alert</span>
+      <span><b>100 Hz</b> sampling</span>
+      <span><b>Seconds</b> to alert</span>
       <span><b>Force + rotation</b>, every snap</span>
     </div>
   </div>
@@ -439,10 +439,10 @@
   <div class="eyebrow">Impact → alert</div>
   <h2 class="head" style="margin-top:16px">Four stages. <span class="it">One snap.</span></h2>
   <div class="pipe">
-    <div class="step"><div class="num">CAPTURED</div><div class="t">The hit</div><div class="d">Sensors log force, rotation, and location at 1000 samples per second.</div><div class="ms">t = 0 ms</div></div>
-    <div class="step"><div class="num">SCORED</div><div class="t">The model</div><div class="d">The impact is scored against the athlete's own concussion-risk curve.</div><div class="ms">t ≈ 20 ms</div></div>
-    <div class="step"><div class="num">UPLINKED</div><div class="t">The cloud</div><div class="d">Flagged events stream off the sideline over the cellular link.</div><div class="ms">t ≈ 40 ms</div></div>
-    <div class="step"><div class="num">ALERTED</div><div class="t">The call</div><div class="d">A plain-language alert lands on your phone — and the coach's — before the next play.</div><div class="ms">t &lt; 50 ms</div></div>
+    <div class="step"><div class="num">CAPTURED</div><div class="t">The hit</div><div class="d">Sensors log force, rotation, and location at 100 samples per second.</div><div class="ms">t = 0</div></div>
+    <div class="step"><div class="num">SCORED</div><div class="t">The model</div><div class="d">The impact is scored against the athlete's own concussion-risk curve.</div><div class="ms">on the device</div></div>
+    <div class="step"><div class="num">UPLINKED</div><div class="t">The cloud</div><div class="d">Flagged events stream off the sideline over the cellular link.</div><div class="ms">t ≈ 1–2 s</div></div>
+    <div class="step"><div class="num">ALERTED</div><div class="t">The call</div><div class="d">A plain-language alert lands on your phone — and the coach's — before the next play.</div><div class="ms">t ≈ 2–4 s</div></div>
   </div>
   <div class="flowmap reveal" aria-hidden="true">
     <div class="track">
@@ -455,7 +455,7 @@
         <div class="fnode n4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5a6 6 0 0 1 12 0c0 4.5 1.8 5.5 2 5.8H4c.2-.3 2-1.3 2-5.8Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></div>
       </div>
     </div>
-    <div class="flowcap">Impact to alert · <b>under 50 ms</b></div>
+    <div class="flowcap">Impact to alert · <b>seconds, before the next play</b></div>
   </div>
 </div></section>
 
